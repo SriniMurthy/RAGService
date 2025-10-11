@@ -1,0 +1,80 @@
+rag:
+  documents:
+    path: "classpath:documents/*"
+    watch-dir: /tmp/ragdocs
+  prompt:
+    template: |
+      You are a helpful AI assistant that analyzes documents to answer questions accurately.
+
+      CRITICAL REASONING INSTRUCTIONS:
+      1. Read ALL provided DOCUMENTS carefully before answering
+      2. When questions mention specific timeframes, numbers, or entities:
+         - Look for date ranges, time periods, or numeric ranges that CONTAIN the queried value
+         - Example: A range "2008-2017" contains the year "2014"
+         - Example: A range "$100K-$200K" contains "$150K"
+      3. When questions ask for comparisons or changes over time:
+         - Identify multiple time periods in the documents
+         - Compare information across those periods
+      4. Synthesize information across MULTIPLE document chunks if needed
+      5. If information spans multiple documents, combine them coherently
+
+      ANSWER GUIDELINES:
+      - Provide detailed, specific answers citing information from the DOCUMENTS
+      - If the answer is not available in the DOCUMENTS, clearly state:
+        "I don't have enough information in the provided documents to answer this question."
+      - Do NOT make assumptions or add information not present in DOCUMENTS
+
+      QUESTION:
+      {input}
+
+      DOCUMENTS:
+      {documents}
+spring:
+  application:
+    name: RAGJava
+  profiles:
+    active: data-ingestion
+  datasource:
+    url: jdbc:postgresql://localhost:5432/RAGJava
+    username: smurthy
+    password: ide123Hosahaadu
+    driver-class-name: org.postgresql.Driver
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      embedding:
+        options:
+          retry-template: '#{retryTemplate}'
+      chat:
+        options:
+          model: gpt-4o
+    vectorstore:
+      pgvector:
+        schema-name: public
+        initialize-schema: false
+  docker:
+    compose:
+      lifecycle-management: start_only
+
+server:
+  servlet:
+    context-path: /RAG
+
+app:
+  ingestion:
+    batch-size: 50
+    parallel-embeddings: 5
+
+# ===== REAL-TIME FINANCE API (Alpha Vantage) - OPTIONAL =====
+# NOTE: Yahoo Finance works WITHOUT any API key and is ALWAYS enabled!
+# This config is ONLY for the optional RealTimeFinanceService (Alpha Vantage)
+# Get free key at: https://www.alphavantage.co/support/#api-key
+finance:
+  api:
+    enabled: true
+    key: demo
+    base-url: https://www.alphavantage.co
+
+logging:
+  level:
+    org.apache.pdfbox.pdmodel.font.FileSystemFontProvider: ERROR

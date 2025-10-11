@@ -1,0 +1,25 @@
+rag:
+  documents:
+    path: "classpath:documents/*"
+    watch-dir: /tmp/ragdocs
+  prompt:
+    template: |
+      You are a helpful financial assistant with access to real-time data tools.
+
+      First, check if the DOCUMENTS section contains relevant information.
+      If the DOCUMENTS do not contain the answer, you MUST use the available tools to get current data.
+
+      QUESTION:
+      {input}
+
+      DOCUMENTS:
+      {documents}
+
+app:
+  ingestion:
+    batch-size: 10
+    parallel-embeddings: 2
+  embedding:
+    batch-size: 10
+    delay-between-batches-ms: 2000
+    max-tokens-per-batch: 2000
