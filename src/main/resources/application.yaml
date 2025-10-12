@@ -36,8 +36,8 @@ spring:
     active: data-ingestion
   datasource:
     url: jdbc:postgresql://localhost:5432/RAGJava
-    username: smurthy
-    password: ide123Hosahaadu
+    username: postgres
+    password: ${MY_PASSWORD}
     driver-class-name: org.postgresql.Driver
   ai:
     openai:
