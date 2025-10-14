@@ -605,6 +605,14 @@ What this does:
 - Watch for log messages: "📰 Fetching market news..."
 
 ## License
+
 https://docs.google.com/document/d/18L1GfYR5_JGAX3vNgMTBlst6kb7ceTrSCPuLb_FGRjw/edit?usp=sharing
+
+## Generating RAFT Datasets
+To manually generate a raw RAFT training dataset for a specific document category, 
+run the command below from the project root. Replace <category_name> with the target
+category you wish to process (e.g., finance, general).
+
+./mvnw spring-boot:run -Dspring-boot.run.profiles=dataset-generation -Dgenerate.category=<category_name>
 
 Demo project - use freely for learning and prototyping.
