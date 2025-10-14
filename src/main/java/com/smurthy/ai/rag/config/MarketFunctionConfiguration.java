@@ -281,14 +281,15 @@ public class MarketFunctionConfiguration {
         return request -> {
             log.debug("   🔧 TOOL CALLED: getCompanyProfile(" + request.symbol() + ")");
 
-            // company profile logic here
-            // For now, return basic info
-            // You could call an external API or database
+            // TODO: Integrate with real company profile API
+            // This is PLACEHOLDER DATA ONLY - not real company information
+            log.warn(" getCompanyProfile returning PLACEHOLDER data - integrate real API!");
+
             return new CompanyResponse(
                     request.symbol(),
-                    "Technology company focused on consumer electronics and software",
-                    "NASDAQ",
-                    "Cupertino, CA"
+                    "[PLACEHOLDER DATA] Company profile not available. Please use getMarketNews for real company information.",
+                    "Unknown",
+                    "Unknown"
             );
         };
     }
@@ -332,7 +333,7 @@ public class MarketFunctionConfiguration {
     @Description("Get real-time stock quote from external finance API (Alpha Vantage) including price, change, volume, high/low")
     public Function<RealTimeQuoteRequest, RealTimeQuoteResponse> getRealTimeQuote() {
         return request -> {
-            log.debug("   🌐 TOOL CALLED: getRealTimeQuote(" + request.symbol() + ") - Fetching from Internet");
+            log.debug(" TOOL CALLED: getRealTimeQuote(" + request.symbol() + ") - Fetching from Internet");
 
             RealTimeFinanceService.StockQuote quote = financeService.getStockQuote(request.symbol());
 
@@ -356,7 +357,7 @@ public class MarketFunctionConfiguration {
     @Description("Get delayed stock quote from Yahoo Finance (15-20 min delay, FREE, UNLIMITED requests, NO API key needed)")
     public Function<YahooQuoteRequest, YahooQuoteResponse> getYahooQuote() {
         return request -> {
-            log.debug("   📊 TOOL CALLED: getYahooQuote(" + request.symbol() + ") - Yahoo Finance (FREE!)");
+            log.debug(" TOOL CALLED: getYahooQuote(" + request.symbol() + ") - Yahoo Finance (FREE!)");
 
             YahooFinanceService.DelayedQuote quote = yahooFinanceService.getDelayedQuote(request.symbol());
 
@@ -378,7 +379,7 @@ public class MarketFunctionConfiguration {
     @Description("Get historical stock prices for a date range (format: YYYY-MM-DD). Great for trend analysis!")
     public Function<HistoricalDataRequest, HistoricalDataResponse> getHistoricalPrices() {
         return request -> {
-            log.debug("   📈 TOOL CALLED: getHistoricalPrices(" + request.symbol() +
+            log.debug(" TOOL CALLED: getHistoricalPrices(" + request.symbol() +
                     " from " + request.fromDate() + " to " + request.toDate() + ")");
 
             LocalDate from = LocalDate.parse(request.fromDate());

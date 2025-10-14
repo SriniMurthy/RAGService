@@ -53,7 +53,7 @@ class AgenticComparisonController {
                 .defaultAdvisors(
                         RetrievalAugmentationAdvisor.builder()
                                 .documentRetriever(VectorStoreDocumentRetriever.builder()
-                                        .similarityThreshold(0.50)
+                                        .similarityThreshold(0.30)  // Lowered from 0.50 to be more lenient
                                         .vectorStore(vectorStore)
                                         .build())
                                 .build(),
@@ -70,23 +70,53 @@ class AgenticComparisonController {
         this.metaAgent = ChatClient.builder(chatModel)
                 .defaultSystem("""
                     You are a planning agent that analyzes queries and decides on tool usage.
+
+                    IMPORTANT CONTEXT:
+                    - The execution agent has access to a RAG document store with user resumes and personal documents
+                    - Documents will ALWAYS be checked first before using any tools
+                    - Your job: Suggest fallback tools in case documents don't have the answer
+
+                    TOOL SELECTION STRATEGY:
+
+                    1. PERSONAL/BIOGRAPHICAL QUERIES (people in resumes):
+                       - "Who is [Person Name]" → [] (documents only, no tools needed)
+                       - "Tell me about [Person Name]" → [] (documents only)
+                       - Example: "Who is Srinivas Murthy" → []
+
+                    2. COMPANY/ORGANIZATION INFORMATION:
+                       - "What is [Company Name]" → ["getMarketNews"] (fallback if not in docs)
+                       - "Tell me about [Company]" → ["getMarketNews"] (fallback)
+                       - Example: "What is Zscaler" → ["getMarketNews"]
+                       - Example: "What does Google do" → ["getMarketNews"]
+
+                    3. REAL-TIME MARKET DATA:
+                       - Stock prices → ["getYahooQuote"]
+                       - Market news → ["getMarketNews"]
+                       - Weather → ["getWeatherByLocation"] or ["getWeatherByZipCode"]
+                       - Example: "Stock price of AAPL" → ["getYahooQuote"]
+
+                    4. FINANCIAL ANALYSIS:
+                       - Financial ratios → ["analyzeFinancialRatios"]
+                       - Historical data → ["getHistoricalPrices"]
+                       - Market trends → ["predictMarketTrend"]
+
                     Available tools:
                     - getStockPrice: Mock/cached stock prices (for testing)
                     - getYahooQuote: Real stock quotes from Yahoo Finance (FREE, NO API KEY REQUIRED)
                     - getHistoricalPrices: Historical stock data from Yahoo Finance
-                    - getMarketNews: Latest market news from Google News RSS (FREE, NO API KEY)
+                    - getMarketNews: Latest news from Google News RSS (works for ANY topic - companies, tech, finance, etc.)
                     - analyzeFinancialRatios: Financial analysis (P/E, ROE, Debt/Equity)
                     - getEconomicIndicators: Economic data (GDP, inflation, unemployment)
                     - predictMarketTrend: ML-based market trend predictions
                     - getAdvancedAnalytics: Advanced analytics and insights
                     - compareStocks: Compare multiple stocks side-by-side
-                    - getCompanyProfile: Detailed company information
+                    - getCompanyProfile: Detailed company information (PLACEHOLDER DATA ONLY)
                     - calculatePortfolioMetrics: Portfolio analysis and metrics
                     - getRealTimeQuote: Real-time quotes from Alpha Vantage (requires API key)
                     - getWeatherByLocation: Weather data by location name
                     - getWeatherByZipCode: Weather data by ZIP code
 
-                    IMPORTANT: For stock price queries, prefer getYahooQuote over getStockPrice since it provides REAL data.
+                    KEY PRINCIPLE: When in doubt, suggest ONE relevant fallback tool. The execution agent will check documents first anyway.
                     """)
                 .build();
 
@@ -139,6 +169,7 @@ class AgenticComparisonController {
                     4. Use the EXACT values returned by tools in your answer
 
                     TOOL SELECTION GUIDE:
+                    - "What is [Company]" → getMarketNews("CompanyName", 5) - Learn about companies from news
                     - "Why is market up/down today" → getMarketNews("stock market", 5)
                     - "Market movers", "biggest gainers/losers" → getMarketMovers("NASDAQ" or "NYSE", 5)
                     - "Stock price of X" → getYahooQuote("SYMBOL")
@@ -147,12 +178,14 @@ class AgenticComparisonController {
                     - "Economic data" → getEconomicIndicators("indicator")
 
                     KEY TOOLS:
-                    - getMarketNews: Universal news (works for ANY topic: finance, politics, sports, tech, world events)
+                    - getMarketNews: Universal news (works for ANY topic: companies, finance, politics, sports, tech, world events)
+                      * Use this to learn what a company does, their industry, products, and recent activities
+                      * Example: "What is Zscaler" → getMarketNews("Zscaler", 5)
                     - getMarketMovers: Real-time top stock gainers/losers
                     - getYahooQuote: Real stock quotes
                     - getEconomicIndicators: Economic data
 
-                    Always call tools to get fresh data. Be transparent about which tools you used.
+                    Always call tools to get fresh data. When describing companies, synthesize information from ALL news articles to provide a comprehensive answer about what the company does, their industry, and key products. Be transparent about which tools you used.
                     """)
                 .build();
 
@@ -220,9 +253,22 @@ class AgenticComparisonController {
         ChatClient focusedClient = baseBuilder
                 .defaultToolNames(selectedTools.toArray(new String[0]))
                 .defaultSystem("""
-                    You are a helpful AI assistant.
-                    First, use the information from the DOCUMENTS section to answer the question.
-                    If the answer is not in the DOCUMENTS, use the provided tools to find the information.
+                    You are a helpful AI assistant with access to both documents and tools.
+
+                    EXECUTION STRATEGY:
+                    1. ALWAYS check the DOCUMENTS section FIRST
+                    2. If the documents have sufficient information, answer from the documents
+                    3. If the documents are missing information or incomplete, you MUST call the provided tools
+                    4. You can use BOTH documents and tools together for comprehensive answers
+
+                    IMPORTANT - TOOL USAGE:
+                    - For company queries like "What is [Company]", use getMarketNews to get comprehensive information
+                    - Example: "What is Zscaler" → Call getMarketNews("Zscaler", 5)
+                    - Synthesize information from ALL news articles to describe what the company does, their industry, and products
+                    - Documents may have partial info (e.g., "worked at Zscaler") but not complete info (e.g., "what Zscaler is")
+                    - In such cases, YOU MUST USE THE TOOLS to fill in the gaps
+                    - Be transparent about your sources (documents vs tools)
+                    - Only say "I don't have enough information" if BOTH documents and tools fail or return nothing useful
                     """)
                 .build();
 
@@ -314,13 +360,21 @@ class AgenticComparisonController {
                 .defaultToolNames(toolsNeeded.toArray(new String[0]))
                 .defaultSystem(String.format("""
                         You are a helpful AI assistant. Execute this plan to answer the user's question.
-                        Always check the DOCUMENTS section first before using tools.
+
+                        EXECUTION RULES:
+                        1. Always check the DOCUMENTS section first
+                        2. If documents are incomplete or missing information, EXECUTE THE TOOLS in the plan below
+                        3. For company queries like "What is [Company]", you MUST call getMarketNews to get comprehensive information
+                        4. Synthesize information from ALL news articles to describe what the company does, their industry, and products
+                        5. Documents may have partial info (e.g., "worked at Zscaler") but not complete info (e.g., "what Zscaler is")
+                        6. When documents lack the answer, FOLLOW THE PLAN and use the tools provided
 
                         REASONING: %s
 
-                        STEPS:
+                        EXECUTION PLAN - FOLLOW THESE STEPS:
                         %s
 
+                        Be transparent about which sources you used (documents vs tools).
                         """,
                         plan.reasoning(),
                         plan.steps().stream()
@@ -390,20 +444,44 @@ class AgenticComparisonController {
     // =================================================================
 
     private List<String> parseToolList(String json) {
+        log.debug("   🔍 Parsing tool list from meta-agent response: " + json);
+
         // Remove JSON array brackets and quotes
         json = json.trim()
                 .replaceAll("^\\[|\\]$", "")
                 .replaceAll("\"", "")
                 .trim();
 
-        if (json.isEmpty()) {
+        // Handle edge cases: "None", "none", "N/A", empty, etc.
+        if (json.isEmpty() ||
+            json.equalsIgnoreCase("none") ||
+            json.equalsIgnoreCase("n/a") ||
+            json.equalsIgnoreCase("null")) {
+            log.debug("   Meta-agent returned no tools (response was: " + json + ")");
             return List.of();
         }
 
-        return List.of(json.split(",\\s*"));
+        // Split and filter out any invalid tool names
+        String[] toolNames = json.split(",\\s*");
+        List<String> validTools = new ArrayList<>();
+
+        for (String toolName : toolNames) {
+            String trimmed = toolName.trim();
+            // Only include if it's in our allTools map
+            if (allTools.containsKey(trimmed)) {
+                validTools.add(trimmed);
+            } else {
+                log.warn("  Meta-agent suggested invalid/unknown tool: '" + trimmed + "' (ignoring)");
+            }
+        }
+
+        log.debug(" Validated tools: " + validTools);
+        return validTools;
     }
 
     private ExecutionPlan parsePlan(String planText) {
+        log.debug(" Parsing execution plan from meta-agent response");
+
         // Simple parsing - in production use proper JSON parsing
         String[] lines = planText.split("\n");
         String reasoning = "";
@@ -420,18 +498,25 @@ class AgenticComparisonController {
                 // Parse step: "1. getStockPrice - Get current prices"
                 String stepText = line.replaceFirst("^\\d+\\.\\s*", "");
                 String[] parts = stepText.split("-", 2);
-                if (parts.length == 2) {
-                    steps.add(new PlanStep(
-                            parts[0].trim(),
-                            parts.length > 1 ? parts[1].trim() : "Execute"
-                    ));
+                if (parts.length >= 1) {
+                    String toolName = parts[0].trim();
+                    String purpose = parts.length > 1 ? parts[1].trim() : "Execute";
+
+                    // Only add valid tools that exist in our allTools map
+                    if (allTools.containsKey(toolName)) {
+                        steps.add(new PlanStep(toolName, purpose));
+                    } else {
+                        log.warn("Plan includes invalid tool: '" + toolName + "' (skipping)");
+                    }
                 }
             }
         }
 
+        // If no steps, don't create a fake one - just return empty
+        log.debug("   ✅ Parsed plan: " + steps.size() + " steps");
         return new ExecutionPlan(
-                reasoning.isEmpty() ? "Strategic analysis of query requirements" : reasoning,
-                steps.isEmpty() ? List.of(new PlanStep("getStockPrice", "default")) : steps
+                reasoning.isEmpty() ? "Check documents for answer" : reasoning,
+                steps  // No fallback - empty list is valid!
         );
     }
 

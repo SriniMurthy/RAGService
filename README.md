@@ -605,5 +605,6 @@ What this does:
 - Watch for log messages: "📰 Fetching market news..."
 
 ## License
+https://docs.google.com/document/d/18L1GfYR5_JGAX3vNgMTBlst6kb7ceTrSCPuLb_FGRjw/edit?usp=sharing
 
 Demo project - use freely for learning and prototyping.

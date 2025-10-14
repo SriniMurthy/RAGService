@@ -39,7 +39,7 @@ public class RAGDataController {
                 .defaultAdvisors(
                         RetrievalAugmentationAdvisor.builder()
                                 .documentRetriever(VectorStoreDocumentRetriever.builder()
-                                        .similarityThreshold(0.50) // Balanced threshold for good recall
+                                        .similarityThreshold(0.30) // Lowered from 0.50 for better recall
                                         .topK(10) // Retrieve more chunks for timeline/comparison questions
                                         .vectorStore(vectorStore)
                                         .build())
