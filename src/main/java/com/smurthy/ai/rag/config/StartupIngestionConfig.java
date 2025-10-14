@@ -26,7 +26,9 @@ public class StartupIngestionConfig {
     public CommandLineRunner startupIngestionRunner(DocumentIngestionService ingestionService) {
         return args -> {
             log.info("Performing startup ingestion of documents from classpath...");
-            Arrays.stream(documentResources).forEach(ingestionService::ingest);
+            // Assign a default category for documents ingested on startup
+            String defaultCategory = "general";
+            Arrays.stream(documentResources).forEach(resource -> ingestionService.ingest(resource, defaultCategory));
         };
     }
 }
