@@ -76,7 +76,7 @@ public class ApplicationIntegrationTests extends BaseIntegrationTest {
 
         // NOTE: @SpyBean verification doesn't work reliably with Spring AI function calls
         // because the function beans are created before the spy wrapping.
-        // The console output "🔧 TOOL CALLED: getStockPrice(NVDA)" confirms the tool was called.
+        // The console output  TOOL CALLED: getStockPrice(NVDA)" confirms the tool was called.
     }
 
     @Test
@@ -148,7 +148,7 @@ public class ApplicationIntegrationTests extends BaseIntegrationTest {
         // Verify stock price data is included (from function calls)
         assertThat(responseBody).containsAnyOf("price", "$", "150");
 
-        // NOTE: Console output will show "🔧 TOOL CALLED:" multiple times
+        // NOTE: Console output will show " TOOL CALLED:" multiple times
         // confirming that tools were invoked across the three approaches
     }
 }

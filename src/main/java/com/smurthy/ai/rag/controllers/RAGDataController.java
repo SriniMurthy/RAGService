@@ -98,7 +98,7 @@ public class RAGDataController {
 
         // Clear tool tracking for this request
         ToolInvocationTracker.clear();
-        log.debug("✓ Tracker cleared");
+        log.debug("Tracker cleared");
 
         // For this endpoint, we enable all tools and let the model decide.
         // Uses functionCallingBuilder which does NOT have RAG advisor
@@ -117,15 +117,15 @@ public class RAGDataController {
         );
 
         // Track that tools were made available
-        log.debug("✓ Recording " + allTools.size() + " tools as available");
+        log.debug("Recording " + allTools.size() + " tools as available");
         ToolInvocationTracker.recordToolsAvailable(allTools);
-        log.debug("✓ After recording - wereToolsAvailable(): " + ToolInvocationTracker.wereToolsAvailable());
+        log.debug("After recording - wereToolsAvailable(): " + ToolInvocationTracker.wereToolsAvailable());
 
         ChatClient clientWithAllTools = this.functionCallingBuilder.clone()
                 .defaultToolNames(allTools.toArray(new String[0]))
                 .build();
 
-        log.debug("✓ ChatClient built with " + allTools.size() + " tools");
+        log.debug("ChatClient built with " + allTools.size() + " tools");
 
         String response = clientWithAllTools.prompt()
                 .user(question)
@@ -153,7 +153,7 @@ public class RAGDataController {
             @RequestParam(defaultValue = "default") String conversationId) {
 
         log.debug("═══════════════════════════════════════════════");
-        log.debug("🎯 /chatWithReasoningJson endpoint called");
+        log.debug("/chatWithReasoningJson endpoint called");
         log.debug("   Question: " + question);
         log.debug("═══════════════════════════════════════════════");
 

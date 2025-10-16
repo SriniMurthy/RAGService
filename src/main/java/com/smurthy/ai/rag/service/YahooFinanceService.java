@@ -39,7 +39,7 @@ public class YahooFinanceService {
      */
     public DelayedQuote getDelayedQuote(String symbol) {
         try {
-            log.info("📊 Fetching delayed quote for {} from Yahoo Finance (free, unlimited)", symbol);
+            log.info(" Fetching delayed quote for {} from Yahoo Finance (free, unlimited)", symbol);
 
             Stock stock = YahooFinance.get(symbol);
 
@@ -78,7 +78,7 @@ public class YahooFinanceService {
      */
     public HistoricalData getHistoricalData(String symbol, LocalDate from, LocalDate to) {
         try {
-            log.info("📈 Fetching historical data for {} from {} to {}", symbol, from, to);
+            log.info("Fetching historical data for {} from {} to {}", symbol, from, to);
 
             Stock stock = YahooFinance.get(symbol);
 
@@ -126,7 +126,7 @@ public class YahooFinanceService {
      */
     public StockStats getStockStats(String symbol) {
         try {
-            log.info("📊 Fetching statistics for {}", symbol);
+            log.info(" Fetching statistics for {}", symbol);
 
             Stock stock = YahooFinance.get(symbol, true); // true = include stats
 
@@ -160,7 +160,7 @@ public class YahooFinanceService {
      * Compare multiple stocks side-by-side
      */
     public MultiStockComparison compareStocks(List<String> symbols) {
-        log.info("🔍 Comparing stocks: {}", symbols);
+        log.info(" Comparing stocks: {}", symbols);
 
         List<DelayedQuote> quotes = symbols.stream()
                 .map(this::getDelayedQuote)

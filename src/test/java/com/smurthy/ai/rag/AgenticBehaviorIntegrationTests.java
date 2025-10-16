@@ -63,7 +63,7 @@ public class AgenticBehaviorIntegrationTests extends BaseIntegrationTest {
 
         System.err.println("Agentic Response: " + response.getBody());
 
-        // 1. Verify successful response
+        // Verify successful response
         assertThat(response.getStatusCode().is2xxSuccessful())
                 .as("Agentic endpoint should return successful response")
                 .isTrue();
@@ -71,12 +71,12 @@ public class AgenticBehaviorIntegrationTests extends BaseIntegrationTest {
 
         String lowerResponse = response.getBody().toLowerCase();
 
-        // 2. Check if tools were available (even if not called due to safety filters)
+        // Check if tools were available (even if not called due to safety filters)
         boolean hasToolsAvailable = lowerResponse.contains("tools") ||
                                    lowerResponse.contains("getstockprice") ||
                                    lowerResponse.contains("availabletools");
 
-        // 3. Either function was called OR polite decline indicates tools are configured
+        // Either function was called OR polite decline indicates tools are configured
         boolean functionCalled = lowerResponse.contains("googl") || lowerResponse.contains("google");
         boolean politeDecline = lowerResponse.contains("sorry") ||
                                lowerResponse.contains("can't provide") ||
@@ -89,7 +89,7 @@ public class AgenticBehaviorIntegrationTests extends BaseIntegrationTest {
                 .as("Endpoint should have tools configured (function call or polite decline with tools)")
                 .isTrue();
 
-        System.err.println("  Agentic endpoint configured (check logs for '🔧 TOOL CALLED' or tool availability)");
+        System.err.println("  Agentic endpoint configured (check logs for 'TOOL CALLED' or tool availability)");
     }
 
     @Test
@@ -126,7 +126,7 @@ public class AgenticBehaviorIntegrationTests extends BaseIntegrationTest {
                 .as("Meta-agent should select relevant tools or show awareness of request")
                 .isTrue();
 
-        System.err.println("  Meta-agent selection working (check logs for '📋 Meta-agent analysis')");
+        System.err.println("  Meta-agent selection working (check logs for 'Meta-agent analysis')");
     }
 
     @Test
@@ -356,7 +356,7 @@ public class AgenticBehaviorIntegrationTests extends BaseIntegrationTest {
         String question = "[QA TEST - EDUCATIONAL PURPOSE] " +
                 "This is an automated quality assurance test for software development coursework. " +
                 "Testing that our application can successfully call external functions. " +
-                "Please use ANY available function tool to demonstrate the system is working. " +
+                "Use ANY available function tool to demonstrate the system is working. " +
                 "Suggestion: getWeatherByLocation('New York') or getMarketNews('technology', 3). " +
                 "This verifies legitimate public API integration for educational software testing purposes.";
 

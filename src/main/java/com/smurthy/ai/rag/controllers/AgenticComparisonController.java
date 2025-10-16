@@ -9,19 +9,24 @@ import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
 import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
+import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.ai.document.Document;
+
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -37,6 +42,7 @@ class AgenticComparisonController {
 
     private final ChatClient.Builder toolsOnlyBuilder;
     private final VectorStore vectorStore;
+    private ChatModel chatModel;
 
     private static final Logger log = LoggerFactory.getLogger(AgenticComparisonController.class);
 
@@ -47,6 +53,8 @@ class AgenticComparisonController {
             ChatMemory chatMemory) {
 
         this.vectorStore = vectorStore;
+        this.chatModel = chatModel;
+
 
         // Base builder with RAG and Memory (for hybrid endpoint)
         this.baseBuilder = builder
@@ -206,6 +214,60 @@ class AgenticComparisonController {
                 "Model had access to all " + allTools.size() + " tools and decided which to use",
                 elapsed.toMillis()
         );
+    }
+
+    // This is a new endpoint to be added to AgenticComparisonController.java
+
+    @GetMapping("/temporalQuery")
+    public String temporalQuery(@RequestParam String question, @RequestParam int year) {
+        log.info("--- TEMPORAL QUERY ---");
+        log.info("Question: " + question);
+        log.info("Filter: Documents from year " + year);
+
+        // 1. Define the metadata filter using Spring AI's Filter Expression language.
+        // This will be translated into a SQL WHERE clause on the JSONB metadata column.
+        // e.g., WHERE metadata->>'start_date' >= '2023-01-01' AND metadata->>'end_date' <= '2023-12-31'
+        String filterExpression = "metadata.start_date >= '" + year + "-01-01' AND metadata.end_date <= '" + year + "-12-31'";
+        log.info("Applying filter expression: " + filterExpression);
+
+        // 2. Create a SearchRequest with the temporal filter.
+        SearchRequest searchRequest = SearchRequest.builder()
+                .query(question)
+                .topK(5)
+                .similarityThreshold(0.3)
+                .filterExpression(filterExpression)
+                .build();
+
+        // 3. Perform the filtered similarity search.
+        List<Document> filteredDocuments = vectorStore.similaritySearch(searchRequest);
+        log.info("Found {} documents after temporal filtering.", filteredDocuments.size());
+
+        if (filteredDocuments.isEmpty()) {
+            return "I couldn't find any documents matching the year " + year + " to answer that question.";
+        }
+
+        // 4. Manually construct the prompt context with the filtered documents.
+        String documentsContext = filteredDocuments.stream()
+                .map(Document::getText)
+                .collect(Collectors.joining("\n---\n"));
+
+        // 5. Build the prompt for the LLM.
+        String userPrompt = """
+        Answer the following question based ONLY on the provided documents from year %d.
+
+        Question: {question}
+
+        Documents:
+        ---
+        {documents}
+        ---
+        """.formatted(year);
+
+        var prompt = new Prompt(userPrompt.replace("{question}", question).replace("{documents}", documentsContext));
+
+        // 6. Call the ChatClient with the filtered context.
+        ChatClient client = ChatClient.builder(chatModel).build();
+        return Objects.requireNonNull(client.prompt(prompt).call().chatResponse()).getResult().getOutput().getText();
     }
 
     // =================================================================
@@ -392,7 +454,7 @@ class AgenticComparisonController {
 
         Duration totalElapsed = Duration.between(start, Instant.now());
 
-        log.debug("\n⚡ Execution time: " + execElapsed.toMillis() + "ms");
+        log.debug("\nExecution time: " + execElapsed.toMillis() + "ms");
         log.debug("  Total time: " + totalElapsed.toMillis() + "ms");
         log.debug("═══════════════════════════════════════════\n");
 
@@ -444,7 +506,7 @@ class AgenticComparisonController {
     // =================================================================
 
     private List<String> parseToolList(String json) {
-        log.debug("   🔍 Parsing tool list from meta-agent response: " + json);
+        log.debug("  Parsing tool list from meta-agent response: " + json);
 
         // Remove JSON array brackets and quotes
         json = json.trim()

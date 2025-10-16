@@ -67,7 +67,7 @@ public class FileWatcherConfig {
                 .handle(File.class, (file, headers) -> {
                     // The parent directory's name is used as the category
                     String category = file.getParentFile().getName();
-                    log.info("👁️ File detected in watch directory: '{}' with category: '{}'", file.getName(), category);
+                    log.info("File detected in watch directory: '{}' with category: '{}'", file.getName(), category);
                     ingestionService.ingest(new FileSystemResource(file), category);
                     return null; // No further processing needed
                 })

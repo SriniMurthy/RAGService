@@ -1,7 +1,7 @@
 rag:
   documents:
     path: "classpath:documents/*"
-    watch-dir: /tmp/ragdocs
+    watch-dir: ${RAG_DROP_FOLDER}
   prompt:
     template: |
       You are a helpful AI assistant that analyzes documents to answer questions accurately.
@@ -36,8 +36,8 @@ spring:
     active: data-ingestion
   datasource:
     url: jdbc:postgresql://localhost:5432/RAGJava
-    username: postgres
-    password: ${MY_PASSWORD}
+    username: ${SM_USER_NAME}
+    password: ${SM_PASSWORD}
     driver-class-name: org.postgresql.Driver
   ai:
     openai:
@@ -65,16 +65,23 @@ app:
     batch-size: 50
     parallel-embeddings: 5
 
-# ===== REAL-TIME FINANCE API (Alpha Vantage) - OPTIONAL =====
-# NOTE: Yahoo Finance works WITHOUT any API key and is ALWAYS enabled!
-# This config is ONLY for the optional RealTimeFinanceService (Alpha Vantage)
+# ===== REAL-TIME FINANCE APIs =====
+
+# Alpha Vantage (25 requests/day free tier)
 # Get free key at: https://www.alphavantage.co/support/#api-key
 finance:
   api:
-    enabled: true
+    enabled: true  # Set to true and add your key
     key: demo
     base-url: https://www.alphavantage.co
 
+# Finnhub (60 requests/minute free tier = 3600/hour, 86,400/day)
+# Get free key at: https://finnhub.io/register
+# RECOMMENDED: Much higher limits than Alpha Vantage
+finnhub:
+  api:
+    enabled: true  # Set to true and add your key
+    key: ${FINNHUB_API_KEY}
 logging:
   level:
     org.apache.pdfbox.pdmodel.font.FileSystemFontProvider: ERROR

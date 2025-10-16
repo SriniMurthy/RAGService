@@ -22,7 +22,7 @@ public class NewsService {
      * Get market news using Google News RSS (FREE, unlimited, no API key!)
      */
     public List<MarketFunctionConfiguration.NewsItem> getMarketNews(String topic, int limit) {
-        log.info("📰 Fetching market news for: {} (limit: {})", topic, limit);
+        log.info("Fetching market news for: {} (limit: {})", topic, limit);
 
         try {
             // Use Google News service to fetch real news
@@ -56,7 +56,7 @@ public class NewsService {
      * Get top headlines by category (BUSINESS, TECHNOLOGY, etc.)
      */
     public List<MarketFunctionConfiguration.NewsItem> getHeadlinesByCategory(String category, int limit) {
-        log.info("📰 Fetching {} headlines (limit: {})", category, limit);
+        log.info(" Fetching {} headlines (limit: {})", category, limit);
 
         try {
             List<GoogleNewsService.NewsArticle> articles = googleNewsService.getTopHeadlines(category, limit);

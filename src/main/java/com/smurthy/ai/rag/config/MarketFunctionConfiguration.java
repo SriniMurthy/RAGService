@@ -8,6 +8,8 @@ import com.smurthy.ai.rag.service.NewsService;
 import com.smurthy.ai.rag.service.RealTimeFinanceService;
 import com.smurthy.ai.rag.service.YahooFinanceService;
 import com.smurthy.ai.rag.service.WeatherService;
+import com.smurthy.ai.rag.service.provider.CompositeStockQuoteProvider;
+import com.smurthy.ai.rag.service.provider.StockQuoteProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -39,6 +41,7 @@ public class MarketFunctionConfiguration {
     private final NewsService newsService;
     private final YahooFinanceService yahooFinanceService;
     private final WeatherService weatherService;
+    private final CompositeStockQuoteProvider compositeStockQuoteProvider;
 
     private static final Logger log = LoggerFactory.getLogger(MarketFunctionConfiguration.class);
 
@@ -50,11 +53,13 @@ public class MarketFunctionConfiguration {
             MarketDataService marketDataService,
             NewsService newsService,
             YahooFinanceService yahooFinanceService,
-            WeatherService weatherService) {
+            WeatherService weatherService,
+            CompositeStockQuoteProvider compositeStockQuoteProvider) {
         this.marketDataService = marketDataService;
         this.newsService = newsService;
         this.yahooFinanceService = yahooFinanceService;
         this.weatherService = weatherService;
+        this.compositeStockQuoteProvider = compositeStockQuoteProvider;
     }
 
 
@@ -159,7 +164,7 @@ public class MarketFunctionConfiguration {
     @Description("Get the real-time price of a stock")
     public Function<StockRequest, StockResponse> getStockPrice() {
         return request -> {
-            log.debug("   🔧 TOOL CALLED: getStockPrice(" + request.symbol() + ")");
+            log.debug(" TOOL CALLED: getStockPrice(" + request.symbol() + ")");
             double price = marketDataService.getStockPrice(request.symbol());
             return new StockResponse(
                     request.symbol(),
@@ -175,7 +180,7 @@ public class MarketFunctionConfiguration {
     public Function<NewsRequest, NewsResponse> getMarketNews() {
         return request -> {
             ToolInvocationTracker.recordToolCall("getMarketNews");
-            log.debug("   🔧 TOOL CALLED: getMarketNews(" + request.topic() + ", " + request.limit() + ")");
+            log.debug(" TOOL CALLED: getMarketNews(" + request.topic() + ", " + request.limit() + ")");
             List<NewsItem> news = newsService.getMarketNews(request.topic(), request.limit());
             return new NewsResponse(news);
         };
@@ -185,7 +190,7 @@ public class MarketFunctionConfiguration {
     @Description("Get top news headlines for a specific category (e.g., BUSINESS, TECHNOLOGY, SPORTS, ENTERTAINMENT).")
     public Function<HeadlinesRequest, NewsResponse> getHeadlinesByCategory() {
         return request -> {
-            log.debug("   📰 TOOL CALLED: getHeadlinesByCategory(" + request.category() + ", " + request.limit() + ")");
+            log.debug(" TOOL CALLED: getHeadlinesByCategory(" + request.category() + ", " + request.limit() + ")");
             List<NewsItem> news = newsService.getHeadlinesByCategory(request.category(), request.limit());
             return new NewsResponse(news);
         };
@@ -195,7 +200,7 @@ public class MarketFunctionConfiguration {
     @Description("Analyze key financial ratios for a company (P/E, ROE, Debt/Equity)")
     public Function<FinancialRatiosRequest, FinancialRatios> analyzeFinancialRatios() {
         return request -> {
-            log.debug("   🔧 TOOL CALLED: analyzeFinancialRatios(" + request.symbol() + ")");
+            log.debug("  TOOL CALLED: analyzeFinancialRatios(" + request.symbol() + ")");
             return new FinancialRatios(
                     request.symbol(),
                     15.3,
@@ -210,7 +215,7 @@ public class MarketFunctionConfiguration {
     @Description("Retrieve major economic indicators like GDP, inflation, or unemployment rates")
     public Function<EconomicRequest, EconomicData> getEconomicIndicators() {
         return request -> {
-            log.debug("   🔧 TOOL CALLED: getEconomicIndicators(" + request.indicator() + ")");
+            log.debug(" TOOL CALLED: getEconomicIndicators(" + request.indicator() + ")");
             return new EconomicData(
                     request.indicator(),
                     3.2,
@@ -224,7 +229,7 @@ public class MarketFunctionConfiguration {
     @Description("Predict the market trend (e.g., bullish, bearish) for a specific sector using ML models")
     public Function<PredictionRequest, MarketPrediction> predictMarketTrend() {
         return request -> {
-            log.debug("   🔧 TOOL CALLED: predictMarketTrend(" + request.sector() + ", " + request.days() + " days)");
+            log.debug(" TOOL CALLED: predictMarketTrend(" + request.sector() + ", " + request.days() + " days)");
             return new MarketPrediction(
                     request.sector(),
                     "bullish",
@@ -238,7 +243,7 @@ public class MarketFunctionConfiguration {
     @Description("Get advanced, premium analytics for a stock symbol")
     public Function<AdvancedAnalyticsRequest, AdvancedAnalytics> getAdvancedAnalytics() {
         return request -> {
-            log.debug("   🔧 TOOL CALLED: getAdvancedAnalytics(" + request.symbol() + ")");
+            log.debug(" TOOL CALLED: getAdvancedAnalytics(" + request.symbol() + ")");
             return new AdvancedAnalytics(
                     request.symbol(),
                     "Premium analysis available",
@@ -251,7 +256,7 @@ public class MarketFunctionConfiguration {
     @Description("Perform a side-by-side comparison of multiple stock symbols")
     public Function<CompareRequest, CompareResponse> compareStocks() {
         return request -> {
-            log.debug("   🔧 TOOL CALLED: compareStocks(" + request.symbols() + ")");
+            log.debug(" TOOL CALLED: compareStocks(" + request.symbols() + ")");
 
             // comparison logic here
             // For now, simple comparison
@@ -279,7 +284,7 @@ public class MarketFunctionConfiguration {
     @Description("Get detailed profile information for a company, including description and location")
     public Function<CompanyRequest, CompanyResponse> getCompanyProfile() {
         return request -> {
-            log.debug("   🔧 TOOL CALLED: getCompanyProfile(" + request.symbol() + ")");
+            log.debug("  TOOL CALLED: getCompanyProfile(" + request.symbol() + ")");
 
             // TODO: Integrate with real company profile API
             // This is PLACEHOLDER DATA ONLY - not real company information
@@ -351,15 +356,94 @@ public class MarketFunctionConfiguration {
         };
     }
 
-    // ===== NEW: Yahoo Finance Tools (FREE, UNLIMITED, NO API KEY!) =====
+    // ===== Stock Quote Providers: AI can choose which to use =====
 
     @Bean("getYahooQuote")
-    @Description("Get delayed stock quote from Yahoo Finance (15-20 min delay, FREE, UNLIMITED requests, NO API key needed)")
+    @Description("Get stock quote with automatic fallback between multiple providers (Yahoo Finance, Alpha Vantage, Google Finance). Recommended as primary tool.")
     public Function<YahooQuoteRequest, YahooQuoteResponse> getYahooQuote() {
         return request -> {
-            log.debug(" TOOL CALLED: getYahooQuote(" + request.symbol() + ") - Yahoo Finance (FREE!)");
+            log.debug(" TOOL CALLED: getYahooQuote(" + request.symbol() + ") - Using composite provider with fallback");
+
+            // Use composite provider which tries providers in priority order
+            StockQuoteProvider.StockQuote quote = compositeStockQuoteProvider.getQuote(request.symbol());
+
+            return new YahooQuoteResponse(
+                    quote.symbol(),
+                    quote.price(),
+                    quote.change(),
+                    quote.changePercent(),
+                    quote.dayHigh(),
+                    quote.dayLow(),
+                    quote.volume(),
+                    quote.companyName(),
+                    quote.source() // This will show which provider succeeded
+            );
+        };
+    }
+
+    @Bean("getQuoteFromYahooOnly")
+    @Description("Get stock quote ONLY from Yahoo Finance (no fallback). Use if you specifically need Yahoo Finance data or if other providers are rate-limited.")
+    public Function<YahooQuoteRequest, YahooQuoteResponse> getQuoteFromYahooOnly() {
+        return request -> {
+            log.debug(" TOOL CALLED: getQuoteFromYahooOnly(" + request.symbol() + ")");
 
             YahooFinanceService.DelayedQuote quote = yahooFinanceService.getDelayedQuote(request.symbol());
+
+            return new YahooQuoteResponse(
+                    quote.symbol(),
+                    quote.price(),
+                    quote.change(),
+                    quote.changePercent(),
+                    quote.dayHigh(),
+                    quote.dayLow(),
+                    quote.volume(),
+                    quote.companyName(),
+                    "Yahoo Finance (direct)"
+            );
+        };
+    }
+
+    @Bean("getQuoteFromFinnhub")
+    @Description("Get stock quote from Finnhub API. FREE tier: 60 calls/minute (86,400/day). Most reliable free option. Requires API key.")
+    public Function<YahooQuoteRequest, YahooQuoteResponse> getQuoteFromFinnhub() {
+        return request -> {
+            log.debug(" TOOL CALLED: getQuoteFromFinnhub(" + request.symbol() + ")");
+
+            // Find Finnhub provider from composite
+            StockQuoteProvider finnhubProvider = compositeStockQuoteProvider.getProviders().stream()
+                    .filter(p -> "Finnhub".equals(p.getProviderName()))
+                    .findFirst()
+                    .orElseThrow(() -> new RuntimeException("Finnhub provider not found - check if finnhub.api.enabled=true"));
+
+            StockQuoteProvider.StockQuote quote = finnhubProvider.getQuote(request.symbol());
+
+            return new YahooQuoteResponse(
+                    quote.symbol(),
+                    quote.price(),
+                    quote.change(),
+                    quote.changePercent(),
+                    quote.dayHigh(),
+                    quote.dayLow(),
+                    quote.volume(),
+                    quote.companyName(),
+                    quote.source()
+            );
+        };
+    }
+
+    @Bean("getQuoteFromGoogleFinance")
+    @Description("Get stock quote from Google Finance (web scraping). FREE, UNLIMITED, no API key. WARNING: May return stale data, use as last resort.")
+    public Function<YahooQuoteRequest, YahooQuoteResponse> getQuoteFromGoogleFinance() {
+        return request -> {
+            log.debug(" TOOL CALLED: getQuoteFromGoogleFinance(" + request.symbol() + ")");
+
+            // Find Google Finance provider from composite
+            StockQuoteProvider googleProvider = compositeStockQuoteProvider.getProviders().stream()
+                    .filter(p -> "Google Finance".equals(p.getProviderName()))
+                    .findFirst()
+                    .orElseThrow(() -> new RuntimeException("Google Finance provider not found"));
+
+            StockQuoteProvider.StockQuote quote = googleProvider.getQuote(request.symbol());
 
             return new YahooQuoteResponse(
                     quote.symbol(),
@@ -398,7 +482,7 @@ public class MarketFunctionConfiguration {
         };
     }
 
-    // ===== NEW: Weather Service Tools (FREE, UNLIMITED!) =====
+    // Weather Service Tools (FREE, UNLIMITED!)
 
     @Bean("getWeatherByLocation")
     @Description("Get current weather for any location by name (e.g. 'Santa Clara, California', 'New York', 'London, UK'). FREE, no API key needed!")
@@ -448,7 +532,7 @@ public class MarketFunctionConfiguration {
     @Description("Get today's biggest stock price movers (top gainers and losers) for a specific market (NASDAQ, NYSE, or SP500)")
     public Function<MarketMoversRequest, MarketMoversResponse> getMarketMovers() {
         return request -> {
-            log.debug("   📊 TOOL CALLED: getMarketMovers(" + request.market() + ", limit: " + request.limit() + ")");
+            log.debug("  TOOL CALLED: getMarketMovers(" + request.market() + ", limit: " + request.limit() + ")");
 
             YahooFinanceService.MarketMovers movers = yahooFinanceService.getMarketMovers(
                     request.market(), request.limit());

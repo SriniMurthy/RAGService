@@ -1,5 +1,6 @@
 package com.smurthy.ai.rag;
 
+import com.smurthy.ai.rag.service.TemporalQueryService;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
@@ -9,6 +10,7 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.util.FileSystemUtils;
 
@@ -28,6 +30,9 @@ public abstract class BaseIntegrationTest {
 
     @Autowired
     protected VectorStore vectorStore;
+
+    @MockBean
+    protected TemporalQueryService temporalQueryService;
 
     @Value("${rag.documents.watch-dir}")
     private String watchDir;

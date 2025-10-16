@@ -39,7 +39,7 @@ public class RealTimeFinanceService {
                 .build();
 
         if (isEnabled && "demo".equals(apiKey)) {
-            log.warn("⚠️  Finance API is enabled but using DEMO key. Get your free key at: https://www.alphavantage.co/support/#api-key");
+            log.warn("Finance API is enabled but using DEMO key. Get your free key at: https://www.alphavantage.co/support/#api-key");
         }
     }
 
@@ -53,7 +53,7 @@ public class RealTimeFinanceService {
         }
 
         try {
-            log.info("🌐 Fetching real-time quote for {} from Alpha Vantage", symbol);
+            log.info("Fetching real-time quote for {} from Alpha Vantage", symbol);
 
             // Alpha Vantage Global Quote endpoint
             String endpoint = "/query?function=GLOBAL_QUOTE&symbol={symbol}&apikey={apiKey}";
@@ -97,7 +97,7 @@ public class RealTimeFinanceService {
         }
 
         try {
-            log.info("🌐 Fetching company overview for {} from Alpha Vantage", symbol);
+            log.info("Fetching company overview for {} from Alpha Vantage", symbol);
 
             String endpoint = "/query?function=OVERVIEW&symbol={symbol}&apikey={apiKey}";
 

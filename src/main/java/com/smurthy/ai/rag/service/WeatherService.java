@@ -42,7 +42,7 @@ public class WeatherService {
      */
     public WeatherData getWeatherByLocation(String location) {
         try {
-            log.info("🌤️  Fetching weather for location: {}", location);
+            log.info(" Fetching weather for location: {}", location);
 
             // Step 1: Geocode location name to coordinates
             GeoLocation geoLocation = geocodeLocation(location);
@@ -66,7 +66,7 @@ public class WeatherService {
      */
     public WeatherData getWeatherByZipCode(String zipCode) {
         try {
-            log.info("🌤️  Fetching weather for ZIP code: {}", zipCode);
+            log.info(" Fetching weather for ZIP code: {}", zipCode);
 
             // Geocode ZIP code (assumes US)
             String query = zipCode + ", USA";
@@ -98,7 +98,7 @@ public class WeatherService {
                 "&precipitation_unit=inch" +
                 "&timezone=auto";
 
-            log.info("🌐 Calling Open-Meteo API: lat={}, lon={}", lat, lon);
+            log.info("Calling Open-Meteo API: lat={}, lon={}", lat, lon);
 
             Map<String, Object> response = restClient.get()
                     .uri(url)
@@ -155,7 +155,7 @@ public class WeatherService {
                 "?q=" + java.net.URLEncoder.encode(location, "UTF-8") +
                 "&format=json&limit=1";
 
-            log.info("🗺️  Geocoding location: {}", location);
+            log.info(" Geocoding location: {}", location);
 
             List<Map<String, Object>> results = restClient.get()
                     .uri(url)

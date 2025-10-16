@@ -11,6 +11,7 @@ import java.util.List;
  * The RAFT dataset generation process has been converted to a manual process
  * triggered by a CommandLineRunner in DatasetGenerationConfig.
  * This class is kept for future reference if a scheduled process is needed again.
+ * TODO: Work In Progress, not tested (at all)
  */
 // @Component
 // @Profile("dataset-generation")
@@ -29,7 +30,7 @@ public class RAFTDatasetGenerationScheduler {
      */
    // @Scheduled(cron = "0 0 2 * * ?") // Runs at 2:00 AM every day
     public void runGenerationForAllCategories() {
-        log.info("⏰ Kicking off scheduled nightly RAFT dataset generation...");
+        log.info("Kicking off scheduled nightly RAFT dataset generation...");
 
         // Define the list of categories you want to generate datasets for.
         List<String> categoriesToProcess = List.of("finance", "textbooks");

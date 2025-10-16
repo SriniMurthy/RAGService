@@ -45,7 +45,7 @@ public class GoogleNewsService {
             String encodedQuery = URLEncoder.encode(query, StandardCharsets.UTF_8);
             String rssUrl = GOOGLE_NEWS_RSS_BASE + "/search?q=" + encodedQuery + "&hl=en-US&gl=US&ceid=US:en";
 
-            log.info("📰 Fetching news from Google News RSS: {}", query);
+            log.info("Fetching news from Google News RSS: {}", query);
 
             return fetchRssFeed(rssUrl, limit);
 
@@ -72,7 +72,7 @@ public class GoogleNewsService {
                 default -> GOOGLE_NEWS_RSS_BASE + "?hl=en-US&gl=US&ceid=US:en"; // Top stories
             };
 
-            log.info("📰 Fetching {} headlines from Google News", category);
+            log.info(" Fetching {} headlines from Google News", category);
 
             return fetchRssFeed(rssUrl, limit);
 

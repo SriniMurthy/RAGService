@@ -99,13 +99,13 @@ public class FastDocumentIngestionService {
                         embedBatchWithRetry(batch);
 
                         int completed = completedBatches.incrementAndGet();
-                        log.debug("  ✓ Batch " + batchNum + "/" + batches.size() +
+                        log.debug(" -> Batch " + batchNum + "/" + batches.size() +
                                 " - Complete! (" + completed + " total)");
                         return true;
 
                     } catch (Exception e) {
                         failedBatches.incrementAndGet();
-                        System.err.println("  ✗ Batch " + batchNum + " failed after retries: " + e.getMessage());
+                        System.err.println(" Batch " + batchNum + " failed after retries: " + e.getMessage());
                         return false;
                     }
                 });
@@ -159,7 +159,7 @@ public class FastDocumentIngestionService {
             // This is the actual OpenAI API call for embeddings
             vectorStore.add(batch);
         } catch (Exception e) {
-            System.err.println("    ⚠ Retry triggered: " + e.getMessage());
+            System.err.println("Retry triggered: " + e.getMessage());
             throw e; // Let @Retryable handle it
         }
     }
