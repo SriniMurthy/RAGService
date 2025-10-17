@@ -30,6 +30,8 @@ rag:
       DOCUMENTS:
       {documents}
 spring:
+  codec:
+    max-in-memory-size: 25MB
   application:
     name: RAGJava
   profiles:
@@ -55,6 +57,7 @@ spring:
   docker:
     compose:
       lifecycle-management: start_only
+
 
 server:
   servlet:
