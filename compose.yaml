@@ -3,9 +3,22 @@ services:
     image: 'pgvector/pgvector:pg16'
     environment:
       - 'POSTGRES_DB=RAGJava'
-      - 'POSTGRES_PASSWORD=ide123Hosahaadu'
-      - 'POSTGRES_USER=smurthy'
+      - 'POSTGRES_PASSWORD=${SM_PASSWORD}'
+      - 'POSTGRES_USER=${SM_USERNAME}'
     labels:
       - "org.springframework.boot.service-connection=postgres"
     ports:
       - '5432:5432'
+
+  dynamodb-local:
+    image: 'amazon/dynamodb-local:latest'
+    container_name: dynamodb-local
+    command: "-jar DynamoDBLocal.jar -sharedDb -dbPath ./data"
+    ports:
+      - '8000:8000'
+    volumes:
+      - dynamodb-data:/home/dynamodblocal/data
+    working_dir: /home/dynamodblocal
+
+volumes:
+  dynamodb-data:

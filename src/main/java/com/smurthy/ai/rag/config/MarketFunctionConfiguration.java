@@ -529,7 +529,7 @@ public class MarketFunctionConfiguration {
     }
 
     @Bean("getMarketMovers")
-    @Description("Get today's biggest stock price movers (top gainers and losers) for a specific market (NASDAQ, NYSE, or SP500)")
+    @Description("Get today's biggest stock price movers (top gainers and losers) for a specific market. Parameters: market (NASDAQ, NYSE, or SP500), limit (number of results, use 5 as default)")
     public Function<MarketMoversRequest, MarketMoversResponse> getMarketMovers() {
         return request -> {
             log.debug("  TOOL CALLED: getMarketMovers(" + request.market() + ", limit: " + request.limit() + ")");

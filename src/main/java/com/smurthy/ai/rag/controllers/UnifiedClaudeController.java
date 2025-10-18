@@ -3,9 +3,8 @@ package com.smurthy.ai.rag.controllers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
-import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -14,31 +13,22 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Set;
 
 /**
- * UNIFIED AGENTIC CONTROLLER
+ * CLAUDE-POWERED UNIFIED AGENTIC CONTROLLER
  *
- * A single, Google-like search endpoint that intelligently routes queries to:
- * - RAG Document Store (resumes, PDFs, Excel spreadsheets, Word docs)
- * - Temporal Queries (date-filtered document search)
- * - Real-Time APIs (stocks, weather, news)
+ * Identical functionality to UnifiedAgenticController but uses Claude 3.5 Sonnet
+ * instead of GPT-4o for better function calling reliability.
  *
- * The LLM acts as an intelligent router, deciding which tools to use based on the question.
  *
- * EXAMPLE QUERIES:
- * - "Who is Srinivas Murthy?" → queryDocuments
- * - "What were Q2 2023 sales?" → queryDocumentsByYear + queryDocuments
- * - "Stock price of AAPL" → getYahooQuote
- * - "Weather in San Francisco" → getWeatherByLocation
- * - "Latest AI news" → getMarketNews
- * - "What did I work on in 2021?" → queryDocumentsByYear
- * - "Compare AAPL and GOOGL stocks and show my portfolio from last year" → getYahooQuote + queryDocumentsByYear
- *
- * This is a TRULY AGENTIC system - one endpoint, unlimited possibilities!
+ * This is a testing endpoint to compare:
+ * - OpenAI GPT-4o: /unified/ask
+ * - Anthropic Claude 3.5 Sonnet: /unifiedClaude/ask
+ * GOAL: Validate Claude's superior function calling to fix hallucination issues
  */
 @RestController
-@RequestMapping("/unified")
-public class UnifiedAgenticController {
+@RequestMapping("/unifiedClaude")
+public class UnifiedClaudeController {
 
-    private static final Logger log = LoggerFactory.getLogger(UnifiedAgenticController.class);
+    private static final Logger log = LoggerFactory.getLogger(UnifiedClaudeController.class);
     private final ChatClient.Builder toolsOnlyBuilder;
 
     // ALL available tools - both RAG and external APIs
@@ -71,26 +61,20 @@ public class UnifiedAgenticController {
             "predictMarketTrend"          // ML-based market predictions
     );
 
-    public UnifiedAgenticController(
-            ChatClient.Builder builder,
-            ChatMemory chatMemory) {
+    public UnifiedClaudeController(
+            @Qualifier("anthropicChatModel") ChatModel anthropicChatModel) {
 
-        // Enable chat memory now that we confirmed tools work correctly
-        // The "hallucination" was mock data, not a tool calling issue
-        this.toolsOnlyBuilder = builder
-                .defaultAdvisors(MessageChatMemoryAdvisor.builder(chatMemory).build());
+        // CRITICAL: Create ChatClient.Builder specifically for Anthropic Claude
+        // Use tools-only builder (NO RAG advisor, NO ChatMemory advisor)
+        // Testing Claude's function calling without interference
+        this.toolsOnlyBuilder = ChatClient.builder(anthropicChatModel);
     }
 
     /**
-     * UNIFIED QUERY ENDPOINT
+     * CLAUDE-POWERED UNIFIED QUERY ENDPOINT
      *
-     * One endpoint to rule them all! Ask ANYTHING:
-     * - Document questions (RAG)
-     * - Temporal questions (date-filtered)
-     * - Real-time data (stocks, weather, news)
-     * - Hybrid questions (combine multiple sources)
-     *
-     * The AI automatically decides which tools to use.
+     * Same functionality as /unified/ask but using Claude 3.5 Sonnet
+     * for more reliable function calling.
      */
     @GetMapping("/ask")
     public UnifiedResponse ask(
@@ -98,9 +82,10 @@ public class UnifiedAgenticController {
             @RequestParam(defaultValue = "default") String conversationId) {
 
         log.info("\n╔════════════════════════════════════════════════════╗");
-        log.info("║         UNIFIED AGENTIC QUERY                      ║");
+        log.info("║      CLAUDE-POWERED UNIFIED AGENTIC QUERY          ║");
         log.info("╚════════════════════════════════════════════════════╝");
         log.info(" Question: {}", question);
+        log.info(" Model: Claude 3 Haiku (claude-3-haiku-20240307)");
         log.info(" Available tools: {} total", ALL_TOOLS.size());
         log.info("   - {} RAG/Temporal tools", 5);
         log.info("   - {} External API tools", ALL_TOOLS.size() - 5);
@@ -110,6 +95,8 @@ public class UnifiedAgenticController {
         // System prompt that teaches the LLM to be an intelligent router
         String systemPrompt = """
             You are an intelligent AI assistant with access to BOTH internal documents AND real-time external data.
+
+            CRITICAL: You MUST use the provided tools to answer questions. Do NOT rely on your training data for real-time information like stock prices, market movers, or current news. ALWAYS call the appropriate tool.
 
             You have access to two types of tools:
 
@@ -191,12 +178,9 @@ public class UnifiedAgenticController {
             6. HYBRID QUERIES (combine multiple sources):
                "Compare AAPL and GOOGL, and show my portfolio from 2022"
                → getYahooQuote("AAPL") + getYahooQuote("GOOGL") + queryDocumentsByYear(2022)
-
             ═══════════════════════════════════════════════════════════════════
-
              IMPORTANT RULES:
             ═══════════════════════════════════════════════════════════════════
-
             1. ALWAYS try querying documents FIRST for biographical/organizational questions
             2. For company questions, check docs first, then use getMarketNews if incomplete
             3. For date-specific questions, use temporal tools (queryDocumentsByYear, etc.)
@@ -218,13 +202,12 @@ public class UnifiedAgenticController {
                 .defaultToolNames(ALL_TOOLS.toArray(new String[0]))
                 .build();
 
-        log.info(" Agent is analyzing question and selecting tools...");
+        log.info(" Claude is analyzing question and selecting tools...");
 
-        // Call the agent - it will automatically decide which tools to use
-        // Chat memory now enabled with conversationId for multi-turn conversations
+        // Call Claude - it will automatically decide which tools to use
+        // NO CHAT MEMORY - testing if Claude has better function calling reliability
         String answer = client.prompt()
                 .user(question)
-                .advisors(a -> a.param("chat_memory_conversation_id", conversationId))
                 .call()
                 .content();
 
@@ -237,7 +220,7 @@ public class UnifiedAgenticController {
                 question,
                 answer,
                 ALL_TOOLS.size(),
-                "AI agent had access to all tools and autonomously decided which to use",
+                "Claude 3.5 Sonnet with full tool access - autonomous tool selection",
                 elapsedMs
         );
     }
@@ -245,7 +228,7 @@ public class UnifiedAgenticController {
     /**
      * SIMPLIFIED ENDPOINT
      *
-     * Even simpler API - just /unified/q?query=your+question
+     * Even simpler API - just /unifiedClaude/q?query=your+question
      */
     @GetMapping("/q")
     public String query(@RequestParam String query) {

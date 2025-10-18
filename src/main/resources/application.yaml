@@ -50,6 +50,12 @@ spring:
       chat:
         options:
           model: gpt-4o
+    anthropic:
+      api-key: ${ANTHROPIC_API_KEY}
+      chat:
+        options:
+          model: claude-3-haiku-20240307
+          temperature: 0.7
     vectorstore:
       pgvector:
         schema-name: public
@@ -88,3 +94,25 @@ finnhub:
 logging:
   level:
     org.apache.pdfbox.pdmodel.font.FileSystemFontProvider: ERROR
+
+# ===== DYNAMODB CHAT MEMORY CONFIGURATION =====
+# Persistent chat history using DynamoDB Local (or AWS DynamoDB)
+chat:
+  memory:
+    dynamodb:
+      # Enable DynamoDB-backed chat memory (set to false to use in-memory)
+      enabled: true
+
+      # DynamoDB Local endpoint (Docker container on port 8000)
+      # Remove this line to use AWS DynamoDB instead
+      endpoint: http://localhost:8000
+
+      # AWS Region (required even for DynamoDB Local)
+      region: us-west-2
+
+      # Table name for storing chat history
+      table-name: chat_history
+
+      # TTL in days - auto-delete conversations older than X days
+      # Set to 0 for no expiration (messages kept indefinitely)
+      ttl-days: 7

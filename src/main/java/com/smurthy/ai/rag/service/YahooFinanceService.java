@@ -263,7 +263,7 @@ public class YahooFinanceService {
      * This returns realistic mock data. For production, use a paid API or web scraping.
      */
     public MarketMovers getMarketMovers(String market, int limit) {
-        log.info("📊 Fetching market movers for {} (returning mock data - Yahoo screener requires subscription)", market);
+        log.info("Fetching market movers for {} (returning mock data - Yahoo screener requires subscription)", market);
 
         // Mock data representing typical market movers
         // In production, scrape Yahoo Finance screener or use Finnhub/Polygon.io API

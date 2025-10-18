@@ -307,7 +307,7 @@ class AgenticComparisonController {
 
         List<String> selectedTools = parseToolList(toolsJson);
 
-        log.debug("\n📋 Meta-agent analysis (" + metaElapsed.toMillis() + "ms):");
+        log.debug("\nMeta-agent analysis (" + metaElapsed.toMillis() + "ms):");
         log.debug("   Selected tools: " + selectedTools);
         log.debug("   Filtered out: " + (allTools.size() - selectedTools.size()) + " tools");
 
@@ -344,7 +344,7 @@ class AgenticComparisonController {
 
         Duration totalElapsed = Duration.between(start, Instant.now());
 
-        log.debug("\n⚡ Execution time: " + execElapsed.toMillis() + "ms");
+        log.debug("\nExecution time: " + execElapsed.toMillis() + "ms");
         log.debug("  Total time: " + totalElapsed.toMillis() + "ms");
         log.debug("═══════════════════════════════════════════\n");
 
@@ -369,7 +369,7 @@ class AgenticComparisonController {
         Instant start = Instant.now();
 
         log.debug("\n═══════════════════════════════════════════");
-        log.debug("🎯 metaReasoning APPROACH");
+        log.debug(" metaReasoning APPROACH");
         log.debug("═══════════════════════════════════════════");
         log.debug("Question: " + question);
         log.debug("Strategy: Create execution plan, then execute step-by-step");
@@ -401,7 +401,7 @@ class AgenticComparisonController {
 
         ExecutionPlan plan = parsePlan(planText);
 
-        log.debug("\n📊 Execution Plan (" + planElapsed.toMillis() + "ms):");
+        log.debug("\n Execution Plan (" + planElapsed.toMillis() + "ms):");
         log.debug("   Reasoning: " + plan.reasoning());
         log.debug("   Steps:");
         for (int i = 0; i < plan.steps().size(); i++) {
@@ -454,7 +454,7 @@ class AgenticComparisonController {
 
         Duration totalElapsed = Duration.between(start, Instant.now());
 
-        log.debug("\nExecution time: " + execElapsed.toMillis() + "ms");
+        log.debug("\npExecution time: " + execElapsed.toMillis() + "ms");
         log.debug("  Total time: " + totalElapsed.toMillis() + "ms");
         log.debug("═══════════════════════════════════════════\n");
 
@@ -575,7 +575,7 @@ class AgenticComparisonController {
         }
 
         // If no steps, don't create a fake one - just return empty
-        log.debug("   ✅ Parsed plan: " + steps.size() + " steps");
+        log.debug(" Parsed plan: " + steps.size() + " steps");
         return new ExecutionPlan(
                 reasoning.isEmpty() ? "Check documents for answer" : reasoning,
                 steps  // No fallback - empty list is valid!
