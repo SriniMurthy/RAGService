@@ -57,11 +57,11 @@
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-pdf-document-reader</artifactId>
         </dependency>
-       <!-- <dependency>
+        <!-- Spring AI Tika Reader - includes Tika + integrates with Spring AI Documents -->
+        <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-tika-document-reader</artifactId>
-            <version>1.1.0-M3</version>
-        </dependency>-->
+        </dependency>
 
         <dependency>
             <groupId>org.springframework.ai</groupId>

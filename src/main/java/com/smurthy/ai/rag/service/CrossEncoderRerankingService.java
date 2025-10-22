@@ -53,11 +53,6 @@ public class CrossEncoderRerankingService implements RerankingService {
                 .collect(Collectors.toList());
     }
 
-    @Override
-    public String getStrategyName() {
-        return "HybridCrossEncoder";
-    }
-
     private ScoredDocument scoreDocument(Document doc, String normalizedQuery, Set<String> queryTerms) {
         double vectorScore = extractSimilarityScore(doc);
         // Pass the full normalized query to calculate a more accurate keyword score

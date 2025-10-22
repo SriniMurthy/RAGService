@@ -34,6 +34,9 @@ public interface RerankingService {
 
     /**
      * Get the reranking strategy name (for logging/observability)
+     * For now, its just "HybridCrossEncoder"
      */
-    String getStrategyName();
+    default String getStrategyName() {
+        return "HybridCrossEncoder";
+    }
 }

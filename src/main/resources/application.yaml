@@ -77,6 +77,13 @@ server:
   servlet:
     context-path: /RAG
 
+pdf:
+  reader:
+    smart: true              # Enable SmartPdfReader
+    enable-ocr: true         # Enable Tika/Tesseract fallback
+    min-chars-per-page: 50   # Threshold to detect scanned PDFs
+
+
 app:
   ingestion:
     batch-size: 50
