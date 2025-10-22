@@ -1,11 +1,13 @@
 package com.smurthy.ai.rag.config;
 
+import com.smurthy.ai.rag.service.HybridRetrievalService;
 import com.smurthy.ai.rag.service.TemporalQueryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Description;
@@ -26,6 +28,7 @@ import java.util.stream.Collectors;
  * - Functions return FULL CONTEXT including metadata so LLM can cite sources
  * - Temporal queries work across ALL document types (Excel, PDF, Word)
  * - TODO: XL Spreadsheets yet to be tested for disparate data
+ * - Uses HybridRetrievalService for improved retrieval quality and metrics tracking
  */
 @Configuration
 public class RAGFunctionConfiguration {
@@ -34,6 +37,9 @@ public class RAGFunctionConfiguration {
 
     private final VectorStore vectorStore;
     private final TemporalQueryService temporalQueryService;
+
+    @Autowired(required = false)
+    private HybridRetrievalService hybridRetrievalService;
 
     public RAGFunctionConfiguration(VectorStore vectorStore, TemporalQueryService temporalQueryService) {
         this.vectorStore = vectorStore;
@@ -149,16 +155,23 @@ public class RAGFunctionConfiguration {
             log.info(" TOOL CALLED: queryDocuments(question='{}')", request.question());
 
             try {
-                // Use reasonable defaults for standard queries
-                SearchRequest searchRequest = SearchRequest.builder()
-                        .query(request.question())
-                        // Get more results for better context
-                        .topK(10)
-                        // Lower threshold for better recall
-                        .similarityThreshold(0.30)
-                        .build();
+                List<Document> documents;
 
-                List<Document> documents = vectorStore.similaritySearch(searchRequest);
+                // Use hybrid retrieval if available, otherwise fall back to vector-only
+                if (hybridRetrievalService != null) {
+                    log.debug("Using HybridRetrievalService for enhanced retrieval");
+                    HybridRetrievalService.HybridRetrievalResult result =
+                        hybridRetrievalService.retrieve(request.question(), 10, 0.30);
+                    documents = result.documents();
+                } else {
+                    log.debug("Using VectorStore for vector-only retrieval");
+                    SearchRequest searchRequest = SearchRequest.builder()
+                            .query(request.question())
+                            .topK(10)
+                            .similarityThreshold(0.30)
+                            .build();
+                    documents = vectorStore.similaritySearch(searchRequest);
+                }
 
                 return buildRichResponse(request.question(), documents);
 
@@ -188,13 +201,24 @@ public class RAGFunctionConfiguration {
                     request.question(), request.topK(), request.similarityThreshold());
 
             try {
-                SearchRequest searchRequest = SearchRequest.builder()
-                        .query(request.question())
-                        .topK(Math.min(request.topK(), 20))  // Cap at 20 to avoid overwhelming context
-                        .similarityThreshold(request.similarityThreshold())
-                        .build();
+                int topK = Math.min(request.topK(), 20);  // Cap at 20 to avoid overwhelming context
+                List<Document> documents;
 
-                List<Document> documents = vectorStore.similaritySearch(searchRequest);
+                // Use hybrid retrieval if available, otherwise fall back to vector-only
+                if (hybridRetrievalService != null) {
+                    log.debug("Using HybridRetrievalService for enhanced retrieval");
+                    HybridRetrievalService.HybridRetrievalResult result =
+                        hybridRetrievalService.retrieve(request.question(), topK, request.similarityThreshold());
+                    documents = result.documents();
+                } else {
+                    log.debug("Using VectorStore for vector-only retrieval");
+                    SearchRequest searchRequest = SearchRequest.builder()
+                            .query(request.question())
+                            .topK(topK)
+                            .similarityThreshold(request.similarityThreshold())
+                            .build();
+                    documents = vectorStore.similaritySearch(searchRequest);
+                }
 
                 return buildRichResponse(request.question(), documents);
 
@@ -296,7 +320,7 @@ public class RAGFunctionConfiguration {
             "Finds documents where date ranges overlap with the query range.")
     public Function<TemporalRangeQueryRequest, DocumentQueryResponse> queryDocumentsByDateRange() {
         return request -> {
-            log.info("📅 TOOL CALLED: queryDocumentsByDateRange(question='{}', from='{}', to='{}')",
+            log.info("TOOL CALLED: queryDocumentsByDateRange(question='{}', from='{}', to='{}')",
                     request.question(), request.startDate(), request.endDate());
 
             try {

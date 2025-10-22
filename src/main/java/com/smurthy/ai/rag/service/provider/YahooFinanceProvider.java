@@ -1,7 +1,9 @@
 package com.smurthy.ai.rag.service.provider;
 
+import lombok.Data;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import yahoofinance.Stock;
 import yahoofinance.YahooFinance;
@@ -14,10 +16,16 @@ import java.math.BigDecimal;
  * FREE, UNLIMITED, NO API KEY - but may have network issues due to Yahoo blocking.
  */
 @Component
+@Data
 public class YahooFinanceProvider implements StockQuoteProvider {
 
     private static final Logger log = LoggerFactory.getLogger(YahooFinanceProvider.class);
-    private static final int PRIORITY = 3; // Lower priority due to reliability issues
+
+    @Value("${finance.api.priority:50}")
+    private  int priority; // Lower priority due to reliability issues
+
+    @Value("${finance.api.enabled:false}")
+    private boolean enabled;
 
     @Override
     public StockQuote getQuote(String symbol) {
@@ -72,11 +80,6 @@ public class YahooFinanceProvider implements StockQuoteProvider {
     @Override
     public String getProviderName() {
         return "Yahoo Finance";
-    }
-
-    @Override
-    public int getPriority() {
-        return PRIORITY;
     }
 
     private double safeDecimal(BigDecimal value) {

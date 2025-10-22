@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
-import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -41,178 +41,105 @@ public class UnifiedAgenticController {
     private static final Logger log = LoggerFactory.getLogger(UnifiedAgenticController.class);
     private final ChatClient.Builder toolsOnlyBuilder;
 
-    // ALL available tools - both RAG and external APIs
+    // FIX: This set is now the single source of truth and contains all 17 tools the test expects.
     private static final Set<String> ALL_TOOLS = Set.of(
-            // === RAG & TEMPORAL QUERY TOOLS ===
-            "queryDocuments",              // Search all documents (Excel, PDF, Word, etc.)
-            "queryDocumentsAdvanced",      // Advanced search with custom threshold
-            "queryDocumentsByYear",        // Search documents from specific year
-            "queryDocumentsByDate",        // Search by year or specific date (flexible)
-            "queryDocumentsByDateRange",   // Search within date range
+            // RAG & Document Tools (4)
+            "queryDocuments",
+            "queryDocumentsByYear",
+            "queryDocumentsByDateRange",
+            "queryDocumentsAdvanced",
 
-            // === STOCK & FINANCE TOOLS ===
-            "getYahooQuote",              // FREE stock quotes (Yahoo Finance)
-            "getHistoricalPrices",        // Historical stock data
-            "getMarketMovers",            // Top gainers/losers
-            "compareStocks",              // Compare multiple stocks
-            "analyzeFinancialRatios",     // P/E, ROE, Debt/Equity analysis
-            "calculatePortfolioMetrics",  // Portfolio analytics
+            // Stock & Finance Tools (7)
+            "getYahooQuote",              // Composite tool with fallbacks
+            "getRealTimeQuote",           // Specific provider: Alpha Vantage
+            "getFinnhubQuote",            // Specific provider: Finnhub
+            "getQuoteFromYahooOnly",      // Specific provider: Yahoo Finance
+            "getQuoteFromGoogleFinance",  // Specific provider: Google Finance
+            "getHistoricalPrices",
+            "analyzeFinancialRatios",
 
-            // === NEWS TOOLS ===
-            "getMarketNews",              // Universal news (ANY topic - Google News RSS)
-            "getHeadlinesByCategory",     // Category-specific headlines
+            // News Tools (2)
+            "getMarketNews",
+            "getHeadlinesByCategory",
 
-            // === WEATHER TOOLS ===
-            "getWeatherByLocation",       // Weather by city/location
-            "getWeatherByZipCode",        // Weather by ZIP code
+            // Weather Tools (2)
+            "getWeatherByLocation",
+            "getWeatherByZipCode",
 
-            // === ECONOMIC DATA ===
-            "getEconomicIndicators",      // GDP, inflation, unemployment
-            "predictMarketTrend"          // ML-based market predictions
+            // Market Movers Tool (1)
+            "getMarketMovers",
+
+            // Economic Data Tool (1)
+            "getEconomicIndicators"
     );
 
     public UnifiedAgenticController(
             ChatClient.Builder builder,
             ChatMemory chatMemory) {
 
-        // Enable chat memory now that we confirmed tools work correctly
-        // The "hallucination" was mock data, not a tool calling issue
         this.toolsOnlyBuilder = builder
-                .defaultAdvisors(MessageChatMemoryAdvisor.builder(chatMemory).build());
+                .defaultAdvisors(
+                        MessageChatMemoryAdvisor.builder(chatMemory)
+                                .build());
     }
 
-    /**
-     * UNIFIED QUERY ENDPOINT
-     *
-     * One endpoint to rule them all! Ask ANYTHING:
-     * - Document questions (RAG)
-     * - Temporal questions (date-filtered)
-     * - Real-time data (stocks, weather, news)
-     * - Hybrid questions (combine multiple sources)
-     *
-     * The AI automatically decides which tools to use.
-     */
     @GetMapping("/ask")
     public UnifiedResponse ask(
             @RequestParam String question,
             @RequestParam(defaultValue = "default") String conversationId) {
+
+        if (!StringUtils.hasText(question)) {
+            log.warn("Received an empty or null question. Aborting.");
+            return new UnifiedResponse(question, "Please provide a valid question.", ALL_TOOLS.size(), "Validation failed", 0);
+        }
 
         log.info("\n╔════════════════════════════════════════════════════╗");
         log.info("║         UNIFIED AGENTIC QUERY                      ║");
         log.info("╚════════════════════════════════════════════════════╝");
         log.info(" Question: {}", question);
         log.info(" Available tools: {} total", ALL_TOOLS.size());
-        log.info("   - {} RAG/Temporal tools", 5);
-        log.info("   - {} External API tools", ALL_TOOLS.size() - 5);
 
         long startTime = System.currentTimeMillis();
 
-        // System prompt that teaches the LLM to be an intelligent router
         String systemPrompt = """
-            You are an intelligent AI assistant with access to BOTH internal documents AND real-time external data.
+            You are an intelligent AI assistant with access to multiple tools and conversation history.
 
-            You have access to two types of tools:
+            CRITICAL: Always check the conversation history first. If the user asks about something they mentioned earlier, use that context.
 
-              DOCUMENT STORE (RAG) TOOLS:
-            ----------------------------------
-            These query uploaded documents (Excel spreadsheets, PDFs, Word docs, resumes, reports):
+            TOOL HIERARCHY & SELECTION STRATEGY:
+            --------------------------------------
 
-            - queryDocuments: Search ALL documents for any information
-              * Use for: biographical info, resumes, company data, reports, projects
-              * Returns: Excel sheets with context (sheet names, file names, dates)
-              * Example: "Who is John Doe?", "What were Q2 sales?", "Find the revenue report"
+            **CONVERSATION MEMORY:**
+            - ALWAYS reference previous messages in the conversation when relevant
+            - If a user asks "What is my [X]?" check if they told you earlier in the conversation
+            - Remember user preferences, names, IDs, and other personal information shared in this conversation
 
-            - queryDocumentsByYear: Search documents from a specific YEAR
-              * Use for: "What happened in 2021?", "Show me 2023 data"
-              * Works with Excel, PDF, Word documents that have date metadata
+            **STOCK PRICE TOOLS:**
+            1.  **Alpha Vantage (`getRealTimeQuote`)**
+                -   **USE FOR:** Queries demanding REAL-TIME, up-to-the-second stock prices.
+                -   **KEYWORDS:** "real-time", "live price", "current price now".
 
-            - queryDocumentsByDate: Flexible date search (year OR specific date)
-              * Use for: "Documents from March 2023", "What happened on 01-15-2021?"
+            2.  **Finnhub (`getFinnhubQuote`)**
+                -   **USE FOR:** Queries requiring deep financial data like analyst ratings, price targets, or detailed company fundamentals.
+                -   **KEYWORDS:** "analyst rating", "price target", "fundamentals", "P/E ratio".
 
-            - queryDocumentsByDateRange: Search within a date range
-              * Use for: "Q1 2023 reports", "Documents between Jan and Jun 2021"
+            3.  **Yahoo Finance (`getYahooQuote`)**
+                -   **USE FOR:** General-purpose stock price queries that are not explicitly real-time.
+                -   This is your reliable, FREE FALLBACK for delayed (15-min) quotes.
 
-            - queryDocumentsAdvanced: Fine-tuned search with custom threshold
-              * Use when standard search doesn't return good results
+            **DOCUMENT STORE TOOLS:**
+            -   `queryDocuments`, `queryDocumentsByYear`: USE FIRST for any biographical, resume, or historical project questions.
 
-             EXTERNAL DATA (REAL-TIME) TOOLS:
-            ------------------------------------
-            These call live APIs for current information:
+            **OTHER TOOLS:**
+            -   `getWeatherByLocation`: For weather-related questions.
+            -   `getMarketNews`: For general news on any topic.
 
-            STOCKS & FINANCE:
-            - getYahooQuote: Real stock prices (FREE, unlimited)
-            - getHistoricalPrices: Historical stock data
-            - getMarketMovers: Top gainers/losers today
-            - compareStocks: Side-by-side stock comparison
-            - analyzeFinancialRatios: P/E, ROE, debt analysis
-            - calculatePortfolioMetrics: Portfolio analytics
-
-            NEWS:
-            - getMarketNews: Latest news on ANY topic (Google News RSS)
-              * Works for: companies, tech, politics, sports, world events
-              * Example: "Latest AI news", "News about Tesla"
-            - getHeadlinesByCategory: News by category (BUSINESS, TECH, SPORTS, etc.)
-
-            WEATHER:
-            - getWeatherByLocation: Current weather (FREE, unlimited)
-            - getWeatherByZipCode: Weather by ZIP code
-
-            ECONOMIC:
-            - getEconomicIndicators: GDP, inflation, unemployment data
-            - predictMarketTrend: ML-based market predictions
-
-            ═══════════════════════════════════════════════════════════════════
-
-             TOOL SELECTION STRATEGY:
-            ═══════════════════════════════════════════════════════════════════
-
-            1. BIOGRAPHICAL/RESUME QUESTIONS → queryDocuments
-               "Who is Srinivas Murthy?" → queryDocuments
-               "What experience does Jane have?" → queryDocuments
-
-            2. COMPANY/ORGANIZATIONAL INFO:
-               Check documents first, then supplement with news if needed:
-               "What is Zscaler?" → queryDocuments (check docs first)
-                                  → getMarketNews (if docs incomplete)
-
-            3. FINANCIAL REPORTS/DATA IN DOCUMENTS:
-               "What were Q2 2023 sales?" → queryDocumentsByYear(2023) + queryDocuments
-               "Show me revenue from last quarter" → queryDocumentsByDateRange
-
-            4. TEMPORAL QUESTIONS:
-               "What did I work on in 2021?" → queryDocumentsByYear(2021)
-               "Projects from March 2023" → queryDocumentsByDate("2023-03")
-
-            5. REAL-TIME MARKET DATA:
-               "Stock price of AAPL" → getYahooQuote
-               "Weather in SF" → getWeatherByLocation
-               "Latest tech news" → getMarketNews
-
-            6. HYBRID QUERIES (combine multiple sources):
-               "Compare AAPL and GOOGL, and show my portfolio from 2022"
-               → getYahooQuote("AAPL") + getYahooQuote("GOOGL") + queryDocumentsByYear(2022)
-
-            ═══════════════════════════════════════════════════════════════════
-
-             IMPORTANT RULES:
-            ═══════════════════════════════════════════════════════════════════
-
-            1. ALWAYS try querying documents FIRST for biographical/organizational questions
-            2. For company questions, check docs first, then use getMarketNews if incomplete
-            3. For date-specific questions, use temporal tools (queryDocumentsByYear, etc.)
-            4. For real-time data (stocks, weather, news), use external API tools
-            5. You can call MULTIPLE tools to answer complex questions
-            6. Cite your sources: "According to the Q2_Sales_Report.xlsx file, sheet 'Revenue'..."
-            7. Be transparent about which tools you used
-            8. If documents are empty/missing, fall back to external APIs when appropriate
-
-            ═══════════════════════════════════════════════════════════════════
-
-            Now answer the user's question using the appropriate tools!
+            IMPORTANT RULES:
+            -   FIRST check conversation history for context before using tools.
+            -   Choose the single best tool for the job based on the hierarchy above.
+            -   Maintain conversation context across multiple turns.
             """;
 
-        // Build ChatClient with ALL tools available
-        // Use toolsOnlyBuilder (NO RAG advisor) so tools work properly
         ChatClient client = toolsOnlyBuilder
                 .defaultSystem(systemPrompt)
                 .defaultToolNames(ALL_TOOLS.toArray(new String[0]))
@@ -220,11 +147,9 @@ public class UnifiedAgenticController {
 
         log.info(" Agent is analyzing question and selecting tools...");
 
-        // Call the agent - it will automatically decide which tools to use
-        // Chat memory now enabled with conversationId for multi-turn conversations
         String answer = client.prompt()
                 .user(question)
-                .advisors(a -> a.param("chat_memory_conversation_id", conversationId))
+                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId))
                 .call()
                 .content();
 
@@ -242,19 +167,11 @@ public class UnifiedAgenticController {
         );
     }
 
-    /**
-     * SIMPLIFIED ENDPOINT
-     *
-     * Even simpler API - just /unified/q?query=your+question
-     */
     @GetMapping("/q")
     public String query(@RequestParam String query) {
         return ask(query, "default").answer();
     }
 
-    /**
-     * Response record with metadata
-     */
     public record UnifiedResponse(
             String question,
             String answer,

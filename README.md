@@ -1,14 +1,19 @@
-# RAG + Agentic AI Demo
+# RAG + Agentic AI: Unified Intelligent Assistant
 
-A RAG (Retrieval Augmented Generation) application demonstrating document-based Q&A and agentic function calling with Spring AI and OpenAI GPT-4o.
+A production-ready Spring AI application combining **Retrieval Augmented Generation (RAG)** with **Agentic Function Calling**, featuring intelligent routing between document search and real-time APIs.
 
 ## What This Does
 
-- **Document Q&A**: Query PDFs, Word docs, and Excel files using natural language
-- **Agentic Function Calling**: Access real-time stock quotes, news, weather, and market data via LLM-driven tool selection
-- **Multi-format Support**: Reads PDF, DOCX, XLSX files with automatic content extraction
-- **Dynamic Ingestion**: Drop files into a watched folder for automatic processing
-- **Three Agentic Approaches**: Compare fully-agentic, meta-selection, and meta-reasoning strategies
+**Unified Intelligence** (`/unified/ask`) - Google-like search endpoint that automatically routes between:
+- **Document Search**: RAG over PDFs, Word docs, Excel files
+- **Real-Time APIs**: Live stock quotes, weather, news
+- **Temporal Queries**: Date-filtered document search
+- **Hybrid Queries**: Combines multiple data sources
+
+ **Pure RAG**: Traditional document-based Q&A
+ **Pure Agentic**: Real-time function calling
+ **Research Endpoints**: Compare 3 different agentic strategies
+ **Intelligent Provider Selection**: LLM-powered API routing with rate limit awareness
 
 ## Quick Start
 
@@ -18,15 +23,17 @@ A RAG (Retrieval Augmented Generation) application demonstrating document-based 
 - Maven
 - Docker Desktop (running)
 - OpenAI API key
+- (Optional) Finnhub API key for real-time stock data
 
 ### Setup
 
-1. **Set your OpenAI API key**:
+1. **Set environment variables**:
 ```bash
 export OPENAI_API_KEY="sk-your-key-here"
+export FINNHUB_API_KEY="your-finnhub-key"  # Optional - get free at finnhub.io
 ```
 
-2. **Configure document drop folder** (optional):
+2. **Configure document drop folder**:
 ```bash
 mkdir /tmp/ragdocs
 ```
@@ -42,97 +49,403 @@ The app will:
 - Ingest documents from `src/main/resources/documents/`
 - Start the API server on port 8080
 
-## API Endpoints
+## API Endpoints Overview
 
-Base URL: `http://localhost:8080/RAG`
+The application provides **4 endpoint categories**:
 
-### Document-Based Q&A (RAG)
+### 1. Unified Intelligent Endpoint  **RECOMMENDED**
 
-**GET /chat**
+**One endpoint for everything** - Let the AI decide what to do.
+
+### 2. Pure RAG Endpoints
+
+**Document-only queries** - No real-time data access.
+
+### 3.  Pure Agentic Endpoints
+
+**Tools-only queries** - No document retrieval.
+
+### 4.  Research/Comparison Endpoints
+
+**Benchmark different agentic strategies** - For optimization and analysis.
+
+---
+
+## 1. Unified Intelligent Endpoint
+
+### GET /unified/ask  **START HERE**
+
+The **smart endpoint** that intelligently routes your question to the right tools.
+
+**Examples:**
+
+```bash
+# Document queries
+curl "http://localhost:8080/RAG/unified/ask?question=Who%20is%20Srinivas%20Murthy"
+# → Uses: queryDocuments tool → Vector store
+
+# Real-time stock data
+curl "http://localhost:8080/RAG/unified/ask?question=What%20is%20the%20stock%20price%20of%20AAPL"
+# → Uses: getYahooQuote tool → Finnhub API (via AgenticProviderSelector)
+
+# Temporal document queries
+curl "http://localhost:8080/RAG/unified/ask?question=What%20projects%20did%20I%20work%20on%20in%202021"
+# → Uses: queryDocumentsByYear tool → Vector store with date filtering
+
+# Weather
+curl "http://localhost:8080/RAG/unified/ask?question=What%27s%20the%20weather%20in%20San%20Francisco"
+# → Uses: getWeatherByLocation tool → Open-Meteo API
+
+# News
+curl "http://localhost:8080/RAG/unified/ask?question=Latest%20AI%20news"
+# → Uses: getMarketNews tool → Google News RSS
+
+# Multi-tool hybrid queries
+curl "http://localhost:8080/RAG/unified/ask?question=Compare%20AAPL%20and%20GOOGL%20stock%20prices%20and%20show%20my%202022%20portfolio"
+# → Uses: getYahooQuote + compareStocks + queryDocumentsByYear
+```
+
+**Shorthand:** `/unified/q?query=...` (same functionality)
+
+### How It Works
+
+```
+User Question
+    ↓
+Unified Controller (17 tools available)
+    ↓
+LLM Intelligence Layer
+    ├─> Analyzes query intent
+    ├─> Selects appropriate tool(s)
+    └─> Follows tool hierarchy
+    ↓
+Tool Execution
+    ├─> RAG Tools → PostgreSQL/PGVector → Documents
+    ├─> Stock Tools → AgenticProviderSelector → Finnhub/Yahoo/Alpha Vantage
+    ├─> News Tools → Google News RSS
+    └─> Weather Tools → Open-Meteo API
+    ↓
+LLM Synthesis
+    ↓
+Unified Answer
+```
+
+### Available Tools (17 Total)
+
+The LLM autonomously selects from:
+
+** RAG & Document Tools (4)**
+- `queryDocuments` - Search all ingested documents
+- `queryDocumentsByYear` - Filter documents by specific year
+- `queryDocumentsByDateRange` - Filter by date range
+- `queryDocumentsAdvanced` - Complex queries with metadata
+
+** Stock & Finance Tools (7)**
+- `getYahooQuote` - **Composite with agentic selection** (DEFAULT)
+- `getRealTimeQuote` - Alpha Vantage real-time (25 calls/day)
+- `getFinnhubQuote` - Finnhub fundamentals (60 calls/min)
+- `getQuoteFromYahooOnly` - Yahoo Finance only (delayed)
+- `getQuoteFromGoogleFinance` - Google Finance (stale data)
+- `getHistoricalPrices` - Historical stock data
+- `analyzeFinancialRatios` - P/E, ROE, debt analysis (mock)
+
+** News Tools (2)**
+- `getMarketNews` - Google News RSS (any topic, unlimited)
+- `getHeadlinesByCategory` - Category-specific headlines
+
+** Weather Tools (2)**
+- `getWeatherByLocation` - By city name (unlimited, free)
+- `getWeatherByZipCode` - By US ZIP code (unlimited, free)
+
+** Market Data Tools (2)**
+- `getMarketMovers` - Top gainers/losers (mock data)
+- `getEconomicIndicators` - GDP, inflation data (mock)
+
+### Intelligent Tool Selection
+
+The LLM follows a **tool hierarchy** for stock quotes:
+
+1. **`getRealTimeQuote`** (Alpha Vantage) - Real-time queries
+   - Keywords: "real-time", "live price", "current price now"
+   - Limit: 25 calls/day
+   - Use: Premium real-time data
+
+2. **`getFinnhubQuote`** (Finnhub) - Deep fundamentals
+   - Keywords: "analyst rating", "price target", "P/E ratio"
+   - Limit: 60 calls/minute
+   - Use: Financial analysis
+
+3. **`getYahooQuote`** (Composite) - General purpose  **DEFAULT**
+   - Default for: "What is the price of AAPL?"
+   - Uses: **Agentic Provider Selection** (see below)
+   - Limit: Effectively unlimited via fallbacks
+   - Use: Routine price checks
+
+4. **Provider-specific overrides** - Explicit provider requests
+   - `getQuoteFromYahooOnly`, `getQuoteFromGoogleFinance`
+   - Use: Only if user explicitly requests that provider
+
+---
+
+## 2. Pure RAG Endpoints (Document-Only)
+
+### GET /chat
+
+Traditional RAG with **no tool access**.
+
 ```bash
 curl "http://localhost:8080/RAG/chat?question=What%20are%20Municipal-to-Treasury%20Yield%20Ratios"
 ```
-- Retrieves relevant document chunks from vector store
-- Returns answers based solely on ingested documents
-- Returns "I don't know" if answer not found in documents
 
-**GET /chatWithReasoning**
+- Searches vector store only
+- Returns "I don't know" if not in documents
+- No real-time API access
+- Similarity threshold: 0.50
+- TopK: 10 chunks
+
+**Use when:** You want to force document-only responses.
+
+---
+
+## 3. Pure Agentic Endpoints (Tools-Only, No RAG)
+
+### GET /chatWithReasoning
+
+Simple tools-only endpoint with **no document retrieval**.
+
 ```bash
-curl "http://localhost:8080/RAG/chatWithReasoning?question=What%20is%20the%20weather%20in%20San%20Jose"
+curl "http://localhost:8080/RAG/chatWithReasoning?question=What%27s%20the%20weather%20in%20San%20Jose"
 ```
-- No RAG - uses function calling only
-- Has access to: stock quotes, news, weather, economic data
-- Best for real-time data questions
 
-### Agentic Approaches (Function Calling)
+- No RAG advisor (no document interference)
+- Access to stock, news, weather tools
+- Best for real-time queries
 
-**GET /agentic/fullyAgentic**
+**Use when:** You want to force tool use without document search.
+
+---
+
+## 4. Research/Comparison Endpoints
+
+Compare **three different agentic strategies** for function calling:
+
+### GET /agentic/fullyAgentic
+
+**Strategy:** Give LLM all 14 tools upfront, let it decide autonomously.
+
 ```bash
 curl "http://localhost:8080/RAG/agentic/fullyAgentic?question=Why%20is%20the%20market%20down%20today"
 ```
-- LLM gets all 14 tools upfront
-- Decides which tools to use autonomously
-- No document retrieval - pure function calling
 
-**GET /agentic/meta-selection**
+- **Pros:** Simplest implementation, maximum flexibility
+- **Cons:** Highest token usage (all tools in context)
+- **Latency:** 2-5 seconds
+- **Best for:** Prototyping, open-ended queries
+
+### GET /agentic/metaSelection
+
+**Strategy:** Meta-agent selects relevant tools first, then executes with filtered set.
+
 ```bash
-curl "http://localhost:8080/RAG/agentic/meta-selection?question=Compare%20AAPL%20and%20TSLA"
+curl "http://localhost:8080/RAG/agentic/metaSelection?question=Compare%20AAPL%20and%20TSLA"
 ```
-- Meta-agent analyzes query and selects relevant tools first
-- Second LLM call executes with filtered tool set
-- Reduces token usage
 
-**GET /agentic/meta-reasoning**
+- **Pros:** 40-70% token reduction, predictable patterns
+- **Cons:** Extra meta-agent call
+- **Latency:** 2-4.5 seconds
+- **Best for:** Production workloads, cost optimization
+
+### GET /agentic/metaReasoning
+
+**Strategy:** Create step-by-step execution plan with reasoning, then execute.
+
 ```bash
-curl "http://localhost:8080/RAG/agentic/meta-reasoning?question=What%20are%20the%20biggest%20NASDAQ%20movers"
+curl "http://localhost:8080/RAG/agentic/metaReasoning?question=What%20are%20the%20biggest%20NASDAQ%20movers"
 ```
-- Creates step-by-step execution plan with reasoning
-- Executes plan with transparent decision-making
-- Best for complex multi-step queries
 
-**GET /agentic/compare-all**
+- **Pros:** Transparency, auditability, strategic ordering
+- **Cons:** Slightly higher latency
+- **Latency:** 3-6 seconds
+- **Best for:** Compliance, debugging, explainability
+
+### GET /agentic/compare-all
+
+Run all three approaches **side-by-side** for comparison.
+
 ```bash
 curl "http://localhost:8080/RAG/agentic/compare-all?question=Get%20stock%20price%20of%20NVDA"
 ```
-Runs all three approaches side-by-side for performance comparison.
 
-## Available Functions (Tools)
+Returns performance metrics and answers from all three approaches.
 
-The agentic endpoints have access to:
+**Comparison Summary:**
 
-**Stock Data (FREE - No API key needed)**
-- `getYahooQuote`: Real stock quotes (15-20 min delay)
-- `getHistoricalPrices`: Historical stock data
-- `getMarketMovers`: Top gainers/losers (mock data)
-- `compareStocks`: Side-by-side stock comparison
+| Approach | LLM Calls | Tokens | Latency | Transparency | Best For |
+|----------|-----------|--------|---------|--------------|----------|
+| **fullyAgentic** | 1 | High (all tools) | 2-5s | Low (black box) | Prototyping, flexibility |
+| **metaSelection** | 2 | Medium (filtered) | 2-4.5s | Medium (tool list) | Production, cost savings |
+| **metaReasoning** | 2 | Medium (filtered) | 3-6s | High (full plan) | Compliance, debugging |
 
-**News & Information (FREE)**
-- `getMarketNews`: Google News RSS (works for any topic, not just markets)
-- `getWeatherByLocation`: Weather by city name
-- `getWeatherByZipCode`: Weather by ZIP code
+---
 
-**Analytics (Mock Data)**
-- `analyzeFinancialRatios`: P/E, ROE, debt ratios
-- `getEconomicIndicators`: GDP, inflation data
-- `predictMarketTrend`: ML-based predictions
-- `calculatePortfolioMetrics`: Portfolio analysis
-- `getCompanyProfile`: Company information
+## Intelligent Stock Quote Provider Selection
 
-**Real-time Data (Requires API key)**
-- `getRealTimeQuote`: Alpha Vantage real-time quotes (requires free API key)
+When the LLM calls `getYahooQuote` (the composite provider tool), the system uses **Agentic Provider Selection** - an LLM-powered routing system that intelligently chooses the best API provider based on real-time conditions.
+
+### Architecture
+
+```
+getYahooQuote tool called
+    ↓
+CompositeStockQuoteProvider
+    ↓
+AgenticProviderSelector (LLM Decision Engine)
+    ├─> ProviderRateLimitTracker
+    │   ├─> Finnhub: 12/60 calls last min, 95% success rate
+    │   ├─> Alpha Vantage: 2/25 calls today, 100% success rate
+    │   └─> Yahoo Finance: Unlimited, 60% success rate
+    │
+    ├─> LLM analyzes provider status
+    └─> Decision: "Use Finnhub - under limit, highest success rate"
+    ↓
+FinnhubProvider.getQuote("AAPL")
+    ↓
+Track result → Update statistics → Return to LLM
+    ↓
+If fails: Try next provider in priority order
+```
+
+### Available Providers
+
+| Provider | Free Tier | Latency | Data Quality | Priority | Default? |
+|----------|-----------|---------|--------------|----------|----------|
+| **Finnhub** | 60/min (3600/hour) | Low | Real-time | 20 (DEFAULT) | ✅ Yes |
+| **Alpha Vantage** | 25/day | Low | Real-time | 10 (Premium) | Only via `getRealTimeQuote` |
+| **Yahoo Finance** | Unlimited | Medium | 15-min delayed | 100 (Fallback) | If Finnhub limited |
+| **Google Finance** | Unlimited | High | Stale data | 110 (Last resort) | If all fail |
+
+### How It Works
+
+**Step 1: LLM Analyzes Providers**
+```
+AVAILABLE PROVIDERS:
+- Finnhub: 45 calls in last minute (45/60), 85% success rate, NOT rate-limited
+- Alpha Vantage: 2 calls today (2/25), 100% success rate, NOT rate-limited
+- Yahoo Finance: Unlimited, 60% success rate, NOT rate-limited
+
+DECISION: Select Finnhub
+REASONING: Under rate limit (45/60), high success rate, most liberal tier
+```
+
+**Step 2: Execute & Track**
+- Calls selected provider
+- Detects success/failure/rate limit
+- Updates statistics for future decisions
+
+**Step 3: Fallback (if needed)**
+- If Finnhub fails or rate-limited → Try Yahoo
+- If Yahoo fails → Try Google
+- All failures logged with reasons
+
+### Configuration
+
+**Enable Agentic Selection** (`application.yaml`):
+```yaml
+finance:
+  # Agentic Provider Selection (LLM-powered routing)
+  agentic-selection:
+    enabled: true  # Use LLM-powered intelligent routing
+    fallback-on-failure: true  # Fall back to priority-based if LLM fails
+
+  # Provider Configuration
+  finnhub:
+    enabled: true
+    priority: 20  # Lower = higher priority
+    key: ${FINNHUB_API_KEY}  # Get free at finnhub.io
+
+  alpha-vantage:
+    enabled: true
+    priority: 10
+    key: demo  # Get free key at alphavantage.co
+    base-url: https://www.alphavantage.co
+
+  yahoo:
+    enabled: true
+    priority: 100
+
+  google:
+    enabled: true
+    priority: 110
+```
+
+**Disable Agentic Selection** (use simple priority-based):
+```yaml
+finance:
+  agentic-selection:
+    enabled: false  # Falls back to priority order
+```
+
+### Benefits
+
+**Traditional Priority-Based Routing:**
+-  Always tries Alpha Vantage first (wastes 25/day quota)
+-  No learning from failures
+-  No adaptation to rate limits
+
+**Agentic LLM-Based Routing:**
+-  Defaults to Finnhub (60 calls/min - most liberal)
+-  Reserves Alpha Vantage for critical queries
+-  Learns from rate limits and failures
+-  Adapts to changing conditions
+-  Provides reasoning transparency
+-  Automatic fallback on errors
+
+### Monitoring
+
+The `ProviderRateLimitTracker` maintains detailed statistics:
+
+```java
+// Finnhub: Success: 145, Failures: 3, RateLimits: 0, LastMin: 12, LastHour: 145, SuccessRate: 97.97%
+// Yahoo Finance: Success: 23, Failures: 8, RateLimits: 0, LastMin: 0, LastHour: 23, SuccessRate: 74.19%
+```
+
+**Key Components:**
+- **`ProviderRateLimitTracker`**: Tracks success/failure rates, sliding window counters
+- **`AgenticProviderSelector`**: LLM-powered decision engine with reasoning
+- **`CompositeStockQuoteProvider`**: Orchestrates selection and fallback
+
+---
+
+## Endpoint Selection Guide
+
+**Which endpoint should I use?**
+
+| Use Case | Best Endpoint | Reason |
+|----------|---------------|--------|
+| **Production app with mixed queries** | `/unified/ask`  | One endpoint handles everything |
+| "What did the report say?" | `/unified/ask` or `/chat` | Both work, unified is future-proof |
+| "Stock price of TSLA" | `/unified/ask` or `/chatWithReasoning` | Both work, unified has better routing |
+| "Compare my portfolio with current prices" | `/unified/ask`  | Only this can combine RAG + APIs |
+| Benchmarking agentic strategies | `/agentic/compare-all` | Research/optimization |
+| Forcing document-only responses | `/chat` | Prevents tool use |
+| Forcing tool-only responses | `/chatWithReasoning` | Prevents document search |
+
+**Recommendation:** Use `/unified/ask` for everything unless you have a specific reason not to.
+
+---
 
 ## Document Ingestion
 
 ### Startup Ingestion
 Place documents in `src/main/resources/documents/` before starting the app.
 
-Supported formats:
+**Supported formats:**
 - PDF (.pdf)
 - Word (.docx)
 - Excel (.xlsx)
 
 ### Runtime Ingestion
-Copy files to `/tmp/${ragdocs}/` while app is running. The file watcher polls every 5 seconds.
+Copy files to `/tmp/ragdocs/` while app is running. The file watcher polls every 5 seconds.
 
 ```bash
 cp my-resume.pdf /tmp/ragdocs/
@@ -141,9 +454,10 @@ cp my-resume.pdf /tmp/ragdocs/
 ### Manual Ingestion
 POST to `/documents/upload` endpoint (implementation in DocumentController).
 
-## Architecture
+---
 
-### RAG Pipeline
+## RAG Pipeline Architecture
+
 ```
 Document → Reader (PDF/Word/Excel) → TextSplitter → Embeddings (OpenAI) → PGVector
                                                                               ↓
@@ -162,349 +476,118 @@ User Query → Embedding → Similarity Search ← Retrieved Chunks → LLM → 
 - TopK: 10 chunks per query
 - Keyword-based function filtering for hybrid mode
 
-**AgenticComparisonController**
-- Tools-only mode (no RAG interference)
-- Meta-agent for tool selection
-- Execution planning with reasoning
-
 **File Watcher**
 - Spring Integration monitors `/tmp/ragdocs`
 - Persistent metadata prevents reprocessing
 - Automatic ingestion on file detection
 
-### Configuration
-
-**application.yaml**
-- RAG prompt template with temporal reasoning instructions
-- Document paths and watch directory
-  - Batch processing settings
-- Database connection (PostgreSQL + PGVector)
-- OpenAI API key
-- Context path: `/RAG`
+---
 
 ## RAG vs Agentic AI: Understanding the Difference
 
-This application demonstrates **two fundamentally different AI patterns** that are often confused:
+This application demonstrates **two fundamentally different AI patterns**:
 
 ### RAG (Retrieval Augmented Generation)
-- **What it does:** Searches through ingested documents (PDFs, Word, Excel) stored in a vector database
-- **Data source:** Static documents you've uploaded
+- **What it does:** Searches through ingested documents stored in vector database
+- **Data source:** Static documents you've uploaded (PDFs, Word, Excel)
 - **Use case:** "What did the quarterly report say about revenue?"
-- **Endpoint:** `/chat`
-- **How it works:** Question → Embedding → Vector similarity search → Retrieve chunks → LLM generates answer from chunks
+- **Endpoints:** `/chat`, `/unified/ask` (when appropriate)
+- **How it works:** Question → Embedding → Vector search → Retrieve chunks → LLM answer
 - **Configuration:** Uses `RetrievalAugmentationAdvisor`
 
 ### Agentic AI (Function Calling / Tool Use)
 - **What it does:** Calls external APIs and functions to fetch real-time data
 - **Data source:** Live APIs (stock prices, weather, news)
 - **Use case:** "What's the current stock price of AAPL?"
-- **Endpoints:** `/agentic/fullyAgentic`, `/agentic/metaReasoning`, `/chatWithReasoning`
-- **How it works:** Question → LLM decides which tools to call → Executes functions → LLM synthesizes answer from tool results
-- **Configuration:** Uses `toolsOnlyBuilder` (NO RAG advisor)
+- **Endpoints:** `/chatWithReasoning`, `/agentic/*`, `/unified/ask` (when appropriate)
+- **How it works:** Question → LLM decides tools → Execute functions → LLM synthesis
+- **Configuration:** Uses function beans with `@Description`
 
-### Key Distinction: Agentic AI ≠ RAG
+### Unified Approach
+The `/unified/ask` endpoint **combines both patterns**:
+- Has access to both RAG tools (document search) AND agentic tools (APIs)
+- LLM intelligently decides which approach to use
+- Can combine multiple data sources in a single query
+- This is the only **true RAG + Agentic hybrid** endpoint
 
-**The `/agentic/*` endpoints are NOT using RAG.** They exclude the `RetrievalAugmentationAdvisor` entirely:
+### Why Separate Endpoints Exist
 
-```java
-// RAG-enabled builder (for /chat endpoint)
-this.chatClientBuilder = builder
-    .defaultAdvisors(
-        RetrievalAugmentationAdvisor.builder()...build(),  // ← RAG advisor
-        MessageChatMemoryAdvisor.builder()...build()
-    );
+The pure RAG (`/chat`) and pure agentic (`/chatWithReasoning`) endpoints exist because:
 
-// Tools-only builder (for /agentic/* endpoints)
-this.toolsOnlyBuilder = builder
-    .defaultAdvisors(
-        MessageChatMemoryAdvisor.builder()...build()
-        // ← NO RetrievalAugmentationAdvisor - no document retrieval
-    );
-```
+**RAG advisor interference:** When RAG advisor is present:
+1. It retrieves documents (which may be empty or irrelevant)
+2. Prompts model to say "I don't know" when documents don't contain answer
+3. Prevents model from using tools even when they're available
 
-**Why the separation?** RAG and function calling interfere with each other:
-- When RAG advisor is present, the LLM receives a "DOCUMENTS" section
-- If documents are empty or irrelevant, the LLM says "I don't know"
-- This prevents the LLM from using tools, even when they're available
-
-**Exception: Hybrid Approach**
-The `/agentic/metaSelection` endpoint uses `baseBuilder` which includes BOTH RAG and tools:
-- First checks documents for the answer
-- If documents don't contain the answer, falls back to calling tools
-- This is the only true RAG + Agentic hybrid in the application
-
-### Summary Table
-
-| Pattern | RAG Advisor | Function Calling | Data Source | Endpoints |
-|---------|-------------|------------------|-------------|-----------|
-| **Pure RAG** | ✅ Yes | ❌ No | Documents | `/chat` |
-| **Pure Agentic** | ❌ No | ✅ Yes | Live APIs | `/agentic/fullyAgentic`, `/agentic/metaReasoning`, `/chatWithReasoning` |
-| **Hybrid** | ✅ Yes | ✅ Yes | Documents + APIs | `/agentic/metaSelection` |
+**Solution:**
+- `/chat`: RAG advisor enabled, no tools → Pure document search
+- `/chatWithReasoning`: No RAG advisor, tools enabled → Pure function calling
+- `/unified/ask`: Both RAG tools and API tools → Intelligent routing
 
 ---
 
-## Three Agentic Approaches Explained
+## Configuration
 
-The `/agentic/*` endpoints demonstrate three distinct strategies for LLM function calling (NOT RAG), each with different trade-offs between simplicity, efficiency, and transparency.
-
-### Approach 1: Fully Agentic (`/agentic/fullyAgentic`)
-
-**Strategy:** Give the model ALL 14 tools upfront and let it autonomously decide which to use.
-
-**How it works:**
-```java
-ChatClient client = toolsOnlyBuilder
-    .defaultToolNames(allTools.keySet().toArray(new String[0]))  // All 14 tools
-    .build();
-
-ChatResponse response = client.prompt()
-    .user(question)
-    .call()
-    .chatResponse();
-```
-
-**Characteristics:**
-- **Simplest implementation** - One LLM call with all tools available
-- **Maximum flexibility** - Model can use any combination of tools
-- **Highest token usage** - All 14 tool definitions sent in every request
-- **No RAG advisor** - Pure function calling, no document retrieval interference
-
-**Best for:**
-- Open-ended queries requiring multiple tools
-- Exploratory questions where tool needs are unpredictable
-- Prototyping and development (easiest to debug)
-
-**Example:**
+### Required Environment Variables
 ```bash
-curl "http://localhost:8080/RAG/agentic/fullyAgentic?question=Why%20is%20the%20market%20down%20today"
-# Model autonomously chooses: getMarketNews → getMarketMovers → getEconomicIndicators
+export OPENAI_API_KEY="sk-your-key-here"
 ```
 
-**Performance:**
-- Execution time: 2-5 seconds (single LLM call)
-- Token usage: ~2000-3000 tokens (all tool definitions in context)
+### Optional Environment Variables
+```bash
+export FINNHUB_API_KEY="your-key"  # Get free at https://finnhub.io
+export SM_USER_NAME="postgres-user"  # Database credentials
+export SM_PASSWORD="postgres-password"
+```
+
+### Application Configuration (`application.yaml`)
+
+**RAG Settings:**
+```yaml
+app:
+  retrieval:
+    topK: 5
+    similarityThreshold: 0.60
+    candidateMultiplier: 4
+```
+
+**Document Processing:**
+```yaml
+app:
+  ingestion:
+    batch-size: 50
+    parallel-embeddings: 5
+```
+
+**Stock Quote Providers:**
+```yaml
+finance:
+  agentic-selection:
+    enabled: true  # LLM-powered provider selection
+    fallback-on-failure: true
+
+  finnhub:
+    enabled: true
+    priority: 20
+    key: ${FINNHUB_API_KEY}
+```
+
+**Chat Memory:**
+```yaml
+chat:
+  memory:
+    dynamodb:
+      enabled: true
+      endpoint: http://localhost:8000  # DynamoDB Local
+      table-name: chat_history
+      ttl-days: 7
+```
 
 ---
-
-### Approach 2: Meta-Agent Selection (`/agentic/meta-selection`)
-
-**Strategy:** Use a meta-agent to analyze the query and select only relevant tools, then execute with a filtered tool set.
-
-**How it works:**
-```java
-// STEP 1: Meta-agent selects relevant tools
-String selectionPrompt = "Analyze this question and determine which tools are needed: " + question;
-String toolsJson = metaAgent.prompt().user(selectionPrompt).call().content();
-List<String> selectedTools = parseToolList(toolsJson);  // e.g., ["getStockPrice", "analyzeFinancialRatios"]
-
-// STEP 2: Execute with only selected tools
-ChatClient focusedClient = baseBuilder
-    .defaultToolNames(selectedTools.toArray(new String[0]))  // Only 2-3 tools
-    .build();
-
-ChatResponse response = focusedClient.prompt().user(question).call().chatResponse();
-```
-
-**Characteristics:**
-- **Two LLM calls** - Meta-agent selection + Execution
-- **Reduced context size** - Only relevant tools sent to execution model
-- **Token efficiency** - ~40-70% reduction compared to fully agentic
-- **Predictable patterns** - Works well for keyword-matchable queries
-
-**Best for:**
-- Production workloads with predictable query patterns
-- Cost-sensitive applications (reduced token usage)
-- Queries where tool needs are deterministic (e.g., "stock price" → getYahooQuote)
-
-**Example:**
-```bash
-curl "http://localhost:8080/RAG/agentic/meta-selection?question=Compare%20AAPL%20and%20TSLA"
-# Meta-agent selects: ["getYahooQuote", "compareStocks", "analyzeFinancialRatios"]
-# Execution only sees these 3 tools instead of all 14
-```
-
-**Performance:**
-- Meta-agent time: 0.5-1.5 seconds
-- Execution time: 1.5-3 seconds
-- Total: 2-4.5 seconds (similar to fully agentic)
-- Token savings: 40-70% (fewer tool definitions)
-
-**Trade-off:**
-- Extra meta-agent call adds latency
-- But reduced context size speeds up execution
-- Net result: Similar latency, lower cost
-
----
-
-### Approach 3: Meta-Reasoning with Plan (`/agentic/meta-reasoning`)
-
-**Strategy:** Create a step-by-step execution plan with strategic reasoning, then execute the plan.
-
-**How it works:**
-```java
-// STEP 1: Meta-agent creates execution plan
-String planningPrompt = """
-    Create a step-by-step execution plan for this question:
-    Question: %s
-    Available tools: %s
-
-    Format:
-    REASONING: [Strategic analysis]
-    STEPS:
-    1. [tool_name] - [purpose]
-    2. [tool_name] - [purpose]
-    """.formatted(question, allTools.keySet());
-
-String planText = metaAgent.prompt().user(planningPrompt).call().content();
-ExecutionPlan plan = parsePlan(planText);
-
-// STEP 2: Execute with plan-aware system prompt
-ChatClient reasoningClient = baseBuilder
-    .defaultToolNames(extractToolsFromPlan(plan))
-    .defaultSystem("""
-        Execute this plan:
-        REASONING: %s
-        STEPS: %s
-        """.formatted(plan.reasoning(), formatSteps(plan.steps())))
-    .build();
-
-ChatResponse response = reasoningClient.prompt().user(question).call().chatResponse();
-```
-
-**Characteristics:**
-- **Most sophisticated** - Explicit planning and reasoning
-- **Transparency** - Plan reveals AI decision-making process
-- **Strategic ordering** - Defines sequence of tool calls
-- **Auditability** - Plan can be logged, reviewed, or modified before execution
-
-**Best for:**
-- Complex multi-step analysis requiring orchestration
-- Scenarios requiring explainability and audit trails
-- Applications where plan review/approval is needed
-- Debugging tool calling behavior (plan reveals model's intent)
-
-**Example:**
-```bash
-curl "http://localhost:8080/RAG/agentic/meta-reasoning?question=What%20are%20the%20biggest%20NASDAQ%20movers"
-# Meta-agent creates plan:
-# REASONING: "Need real-time market data for NASDAQ top movers, then contextual news"
-# STEPS:
-# 1. getMarketMovers - Get top NASDAQ gainers/losers
-# 2. getMarketNews - Get news context for market movement
-# 3. analyzeFinancialRatios - Analyze fundamentals of top movers
-```
-
-**Response includes:**
-```json
-{
-  "answer": "Based on today's market data...",
-  "reasoning": "Need real-time market data for NASDAQ top movers, then contextual news",
-  "executionPlan": [
-    {"action": "getMarketMovers", "purpose": "Get top NASDAQ gainers/losers"},
-    {"action": "getMarketNews", "purpose": "Get news context for market movement"},
-    {"action": "analyzeFinancialRatios", "purpose": "Analyze fundamentals of top movers"}
-  ],
-  "toolsUsed": ["getMarketMovers", "getMarketNews", "analyzeFinancialRatios"],
-  "planningTimeMs": 1200,
-  "executionTimeMs": 2800,
-  "totalTimeMs": 4000
-}
-```
-
-**Performance:**
-- Planning time: 1-2 seconds
-- Execution time: 2-4 seconds
-- Total: 3-6 seconds (slightly slower than other approaches)
-- Token usage: Similar to meta-selection (filtered tool set)
-
-**Trade-off:**
-- Longer latency due to planning step
-- But provides transparency and strategic reasoning
-- Enables human-in-the-loop approval workflows
-
----
-
-### Comparison Summary
-
-| Approach | LLM Calls | Tokens | Latency | Transparency | Best For |
-|----------|-----------|--------|---------|--------------|----------|
-| **Fully Agentic** | 1 | High (all tools) | 2-5s | Low (black box) | Prototyping, flexibility |
-| **Meta-Selection** | 2 | Medium (filtered) | 2-4.5s | Medium (tool list) | Production, cost savings |
-| **Meta-Reasoning** | 2 | Medium (filtered) | 3-6s | High (full plan) | Compliance, debugging |
-
-**Compare all three approaches side-by-side:**
-```bash
-curl "http://localhost:8080/RAG/agentic/compare-all?question=Get%20stock%20price%20of%20NVDA"
-```
-
-Returns performance metrics and answers from all three approaches for direct comparison.
-
-### Key Design Principle: No RAG Interference
-
-All three agentic approaches use `toolsOnlyBuilder` which **excludes the RAG advisor**:
-
-```java
-// Tools-only builder (NO RAG advisor)
-this.toolsOnlyBuilder = builder
-    .defaultAdvisors(
-        MessageChatMemoryAdvisor.builder(chatMemory).build()
-    );
-    // Notice: NO RetrievalAugmentationAdvisor
-```
-
-**Why?** The RAG advisor interferes with function calling by:
-1. Retrieving documents (which may be empty or irrelevant)
-2. Prompting the model to say "I don't know" when documents don't contain the answer
-3. Preventing the model from using tools even when they're available
-
-For pure function calling scenarios (stock prices, news, weather), we **bypass RAG entirely** to ensure tools are actually used.
-
-## Current Limitations & Design Decisions
-
-### Vector Search Limitations
-
-**Temporal Queries**: Questions like "What did I do in 2014?" work if:
-- The LLM receives enough chunks (topK=10) containing the full timeline
-- The prompt guides the LLM to reason about date ranges containing the query year
-- Limitation: Vector similarity doesn't understand "2014 is within 2008-2017" - relies on LLM reasoning
-
-**Why not metadata filtering?**
-- Would require domain-specific parsing logic (resume date extraction, financial report parsing, etc.)
-- Breaks the generic, multi-vertical design principle
-- Current prompt-based approach works across resumes, contracts, financial reports, and technical docs
-
-### Function Calling Limitations
-
-**Market Movers**: Returns mock data because:
-- Yahoo Finance removed free screener API access
-- Real-time movers require paid APIs (Finnhub, Polygon.io)
-- Mock data demonstrates the tool calling pattern
-
-**Stock Quotes**: 15-20 minute delayed via Yahoo Finance
-- Real-time quotes require Alpha Vantage API key (5 calls/day on free tier)
-- Yahoo Finance provides unlimited free delayed quotes
-
-**News Search**: Google News RSS
-- Free and unlimited
-- Works for any topic (not just finance)
-- No API key required
-
-### RAG vs Agentic Separation
-
-**Why separate endpoints?**
-- RAG advisor interferes with tool calling (LLM sees empty documents, says "I don't know")
-- `/RAG/chat`: Pure document retrieval
-- `/chatWithReasoning`: Pure function calling
-- `/agentic/*`: Demonstrates three different tool selection strategies
-
-**Why not GraphRAG?**
-- Current temporal/comparison queries work with standard RAG + better prompting
-- GraphRAG needed for entity relationships ("Who worked with X on project Y?")
-- Adds complexity without clear benefit for current use cases
 
 ## Database Management
 
-**Check vector store contents**:
+**Check vector store contents:**
 ```bash
 psql -h localhost -U smurthy -d RAGJava -c "SELECT COUNT(*) FROM vector_store;"
 ```
@@ -514,105 +597,153 @@ psql -h localhost -U smurthy -d RAGJava -c "SELECT COUNT(*) FROM vector_store;"
 psql -h localhost -U smurthy -d RAGJava -c "TRUNCATE TABLE vector_store;"
 ```
 
-After truncating, restart the app to re-ingest documents.
-
-**Schema initialization**: Set `spring.ai.vectorstore.pgvector.initialize-schema=true` only on first run.
-
-**HNSW Indexing for Performance** (Recommended for Production):
-
-The application includes `schema.sql` which creates an HNSW (Hierarchical Navigable Small World) index on the vector_store table for optimal similarity search performance:
-
+**Create HNSW index for performance** (recommended for production):
 ```bash
 psql -h localhost -U smurthy -d RAGJava -f src/main/resources/schema.sql
 ```
 
 What this does:
-- Creates the `vector_store` table with PGVector support
-- Creates an HNSW index: `CREATE INDEX ON vector_store USING HNSW (embedding vector_cosine_ops);`
-- HNSW provides ~10-100x faster similarity search compared to sequential scans
-- Essential for production workloads with large document sets (>10,000 chunks)
+- Creates `vector_store` table with PGVector support
+- Creates HNSW index: ~10-100x faster similarity search
+- Essential for large document sets (>10,000 chunks)
 
-**When to run schema.sql:**
-- First-time setup (alternative to setting `initialize-schema=true`)
-- After dropping/recreating the database
-- When upgrading to add HNSW indexing to existing deployments
+**Note:** Spring AI's `initialize-schema=true` does NOT create HNSW index.
 
-**Note:** Spring AI's auto-initialization (`initialize-schema=true`) creates the table but **does not** create the HNSW index. For optimal performance, run schema.sql manually.
-
-## Token Usage & Costs
-
-- Embeddings: `text-embedding-ada-002` (~$0.0001 per 1K tokens)
-- Chat: `gpt-4o` (~$0.03 per 1K tokens)
-- Average query: ~$0.01-0.05 depending on context size
+---
 
 ## Testing
 
-**Run all tests**:
+**Run all tests:**
 ```bash
 ./mvnw test
 ```
 
-**Run specific test class**:
+**Run specific test class:**
 ```bash
-./mvnw test -Dtest=AgenticBehaviorIntegrationTests
+./mvnw test -Dtest=UnifiedAgenticControllerIntegrationTest
 ```
 
-## Configuration Reference
+**Test unified endpoint manually:**
+```bash
+# Document query
+curl "http://localhost:8080/RAG/unified/ask?question=Who%20is%20Srinivas%20Murthy"
 
-### Required Environment Variables
-- `OPENAI_API_KEY`: Your OpenAI API key
+# Stock query
+curl "http://localhost:8080/RAG/unified/ask?question=Price%20of%20AAPL"
 
-### Optional Configuration
-- `finance.api.key`: Alpha Vantage API key (default: "demo")
-- `finance.api.enabled`: Enable real-time finance service (default: true)
+# Hybrid query
+curl "http://localhost:8080/RAG/unified/ask?question=Compare%20my%202022%20investments%20with%20current%20TSLA%20price"
+```
 
-### Document Processing
-- `app.ingestion.batch-size`: Chunks per embedding API call (default: 50)
-- `app.ingestion.parallel-embeddings`: Parallel API calls (default: 5)
-
-### RAG Settings
-- Similarity threshold: 0.50 (in RAGDataController)
-- TopK: 10 chunks (in RAGDataController)
-- Memory window: 20 messages (in RAGConfiguration)
+---
 
 ## Tech Stack
 
 - **Java 21**: Language runtime
 - **Spring Boot 3.2.6**: Application framework
 - **Spring AI 1.0.3**: LLM integration
-- **OpenAI GPT-4o**: Language model
+- **OpenAI GPT-4o**: Primary language model
+- **Claude Haiku**: Alternative model for testing
 - **PostgreSQL + PGVector**: Vector database
 - **Apache POI**: Office document processing
-- **Yahoo Finance API**: Free stock data
+- **Finnhub API**: Real-time stock quotes (60 calls/min free)
+- **Alpha Vantage API**: Premium real-time quotes (25 calls/day free)
+- **Yahoo Finance**: Delayed stock quotes (unlimited)
 - **Google News RSS**: Free news aggregation
+- **Open-Meteo API**: Free weather data
+- **DynamoDB Local**: Chat memory persistence
 - **Docker Compose**: Container orchestration
+
+---
+
+## Current Limitations & Design Decisions
+
+### Stock Quote APIs
+
+**Multiple Provider Strategy:**
+- **Agentic Selection** (when enabled): LLM chooses best provider
+  - Defaults to Finnhub (60 calls/min - most liberal free tier)
+  - Falls back to Yahoo Finance (unlimited, 15-20 min delay)
+  - Reserves Alpha Vantage for critical queries (25 calls/day)
+- **Priority-based** (when disabled): Alpha Vantage → Finnhub → Yahoo → Google
+
+**Market Movers:** Returns mock data
+- Yahoo Finance removed free screener API
+- Real-time movers require paid APIs (Finnhub Pro, Polygon.io)
+- Mock data demonstrates tool calling pattern
+
+### RAG Limitations
+
+**Temporal Queries:** Questions like "What did I do in 2014?" work if:
+- LLM receives enough chunks (topK=10) containing full timeline
+- Prompt guides LLM to reason about date ranges containing query year
+- Limitation: Vector similarity doesn't understand "2014 is within 2008-2017"
+
+**Why not metadata filtering?**
+- Would require domain-specific parsing (resume dates, financial reports, etc.)
+- Breaks generic, multi-vertical design principle
+- Current prompt-based approach works across all document types
+
+**Why not GraphRAG?**
+- Current temporal/comparison queries work with standard RAG + better prompting
+- GraphRAG needed for entity relationships ("Who worked with X on project Y?")
+- Adds complexity without clear benefit for current use cases
+
+---
+
+## Token Usage & Costs
+
+- **Embeddings:** `text-embedding-ada-002` (~$0.0001 per 1K tokens)
+- **Chat:** `gpt-4o` (~$0.03 per 1K tokens)
+- **Average query:** ~$0.01-0.05 depending on context size
+- **Agentic selection:** Adds ~$0.005 per composite provider call
+
+---
 
 ## Troubleshooting
 
-**"I don't know" responses on valid document questions**:
+**"I don't know" responses on valid document questions:**
 - Check vector store has documents: `SELECT COUNT(*) FROM vector_store;`
 - Verify chunks contain expected content
 - Lower similarity threshold if needed
+- Try `/unified/ask` instead of `/chat`
 
-**No tools called on agentic endpoints**:
-- Ensure using `/agentic/fullyAgentic` (not `/RAG/chat`)
+**No tools called on queries:**
+- Use `/unified/ask` or `/chatWithReasoning` (not `/chat`)
 - Check console logs for tool execution
-- Try `/chatWithReasoning` for simpler function-only mode
+- Verify question clearly indicates need for real-time data
 
-**File watcher not picking up documents**:
+**File watcher not picking up documents:**
 - Verify `/tmp/ragdocs` exists
 - Check file permissions
-- Watch for log messages: "📰 Fetching market news..."
+- Watch logs for "Fetching market news..." or similar
+
+**Provider selection not working:**
+- Check `finance.agentic-selection.enabled=true` in config
+- Verify Finnhub API key is set
+- Check logs for "Agentic selector chose: ..." messages
+
+**Rate limit errors:**
+- Finnhub: 60/min limit - wait 1 minute or disable
+- Alpha Vantage: 25/day limit - wait 24 hours or use different provider
+- Check `ProviderRateLimitTracker` statistics in logs
+
+---
 
 ## License
 
+Demo project - use freely for learning and prototyping.
+
 https://docs.google.com/document/d/18L1GfYR5_JGAX3vNgMTBlst6kb7ceTrSCPuLb_FGRjw/edit?usp=sharing
 
+---
+
 ## Generating RAFT Datasets
-To manually generate a raw RAFT training dataset for a specific document category, 
-run the command below from the project root. Replace <category_name> with the target
-category you wish to process (e.g., finance, general).
 
+To manually generate a raw RAFT training dataset for a specific document category:
+
+```bash
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=dataset-generation -Dgenerate.category=<category_name>
+```
 
-Demo project - use freely for learning and prototyping.
+Replace `<category_name>` with the target category (e.g., finance, general).

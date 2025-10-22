@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+import static com.smurthy.ai.rag.service.provider.StockQuoteProvider.StockQuote;
 
 import java.util.Map;
 
@@ -182,7 +183,7 @@ public class RealTimeFinanceService {
 
     // ===== Response Records =====
 
-    public record StockQuote(
+   /* public record StockQuote(
             String symbol,
             double price,
             double change,
@@ -192,7 +193,7 @@ public class RealTimeFinanceService {
             long volume,
             String tradingDay,
             String source  // REAL-TIME or MOCK
-    ) {}
+    ) {}*/
 
     public record CompanyOverview(
             String symbol,

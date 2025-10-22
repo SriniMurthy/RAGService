@@ -1,7 +1,9 @@
 package com.smurthy.ai.rag.service.provider;
 
+import lombok.Data;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -15,6 +17,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * Priority: 3 (lowest - unofficial API, may break)
  */
 @Component
+@Data
 public class GoogleFinanceProvider implements StockQuoteProvider {
 
     private static final Logger log = LoggerFactory.getLogger(GoogleFinanceProvider.class);
@@ -28,10 +31,14 @@ public class GoogleFinanceProvider implements StockQuoteProvider {
         this.objectMapper = new ObjectMapper();
     }
 
+    @Value("${finnhub.api.enabled:false}")
+    private boolean enabled;
+
+
     @Override
     public StockQuote getQuote(String symbol) {
         try {
-            log.info("📊 Fetching quote for {} from Google Finance (unofficial API, free)", symbol);
+            log.info("Fetching quote for {} from Google Finance (unofficial API, free)", symbol);
 
             // Google Finance URL - uses their internal API endpoint
             // Format: https://www.google.com/finance/quote/{SYMBOL}:{EXCHANGE}

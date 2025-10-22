@@ -5,12 +5,10 @@ import org.slf4j.LoggerFactory;
 import com.smurthy.ai.rag.advisor.ToolInvocationTracker;
 import com.smurthy.ai.rag.service.MarketDataService;
 import com.smurthy.ai.rag.service.NewsService;
-import com.smurthy.ai.rag.service.RealTimeFinanceService;
 import com.smurthy.ai.rag.service.YahooFinanceService;
 import com.smurthy.ai.rag.service.WeatherService;
 import com.smurthy.ai.rag.service.provider.CompositeStockQuoteProvider;
 import com.smurthy.ai.rag.service.provider.StockQuoteProvider;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Description;
@@ -45,10 +43,6 @@ public class MarketFunctionConfiguration {
 
     private static final Logger log = LoggerFactory.getLogger(MarketFunctionConfiguration.class);
 
-    // Make the real-time service optional, as it may not always be enabled.
-    @Autowired(required = false)
-    private RealTimeFinanceService financeService;
-
     public MarketFunctionConfiguration(
             MarketDataService marketDataService,
             NewsService newsService,
@@ -62,7 +56,10 @@ public class MarketFunctionConfiguration {
         this.compositeStockQuoteProvider = compositeStockQuoteProvider;
     }
 
+    // --- Universal Request/Response Records ---
+    public record StockQuoteRequest(String symbol) {}
 
+    // --- Other Records ---
     public record StockRequest(String symbol) {}
     public record StockResponse(String symbol, double price, double change, String status) {}
 
@@ -83,7 +80,6 @@ public class MarketFunctionConfiguration {
     public record AdvancedAnalyticsRequest(String symbol) {}
     public record AdvancedAnalytics(String symbol, String analysis, double score) {}
 
-    // ===== ADD THESE NEW RECORDS =====
     public record CompareRequest(List<String> symbols) {}
     public record CompareResponse(List<String> symbols, String analysis) {}
 
@@ -93,35 +89,6 @@ public class MarketFunctionConfiguration {
     public record PortfolioRequest(List<String> symbols) {}
     public record PortfolioResponse(List<String> symbols, double returns, double volatility, double sharpe) {}
 
-    // Real-time finance API records
-    public record RealTimeQuoteRequest(String symbol) {}
-    public record RealTimeQuoteResponse(
-            String symbol,
-            double price,
-            double change,
-            double changePercent,
-            double high,
-            double low,
-            long volume,
-            String tradingDay,
-            String source
-    ) {}
-
-    // Yahoo Finance records (delayed but FREE & unlimited)
-    public record YahooQuoteRequest(String symbol) {}
-    public record YahooQuoteResponse(
-            String symbol,
-            double price,
-            double change,
-            double changePercent,
-            double dayHigh,
-            double dayLow,
-            long volume,
-            String companyName,
-            String source
-    ) {}
-
-    // Market movers records
     public record MarketMoversRequest(String market, int limit) {} // market: "NASDAQ", "NYSE", "SP500"
     public record MarketMoversResponse(
             String market,
@@ -146,7 +113,6 @@ public class MarketFunctionConfiguration {
             String summary
     ) {}
 
-    // Weather service records (FREE, no API key!)
     public record WeatherByLocationRequest(String location) {}
     public record WeatherByZipRequest(String zipCode) {}
     public record WeatherResponse(
@@ -159,6 +125,85 @@ public class MarketFunctionConfiguration {
             double windSpeed,
             String status
     ) {}
+
+    // --- REFACTORED STOCK QUOTE TOOLS ---
+
+    /**
+     * Private factory method to create a stock quote tool from a given provider function.
+     * This centralizes the tool creation logic and avoids boilerplate code.
+     */
+    private Function<StockQuoteRequest, StockQuoteProvider.StockQuote> createStockQuoteTool(
+            String providerName,
+            Function<String, StockQuoteProvider.StockQuote> quoteFunction) {
+        return request -> {
+            log.debug("   TOOL CALLED: getQuote from provider '{}' for symbol '{}'", providerName, request.symbol());
+            return quoteFunction.apply(request.symbol());
+        };
+    }
+
+    @Bean("getYahooQuote")
+    @Description("Get stock quote with automatic fallback between multiple providers. Recommended as primary tool.")
+    public Function<StockQuoteRequest, StockQuoteProvider.StockQuote> getYahooQuote() {
+        return createStockQuoteTool("Composite", compositeStockQuoteProvider::getQuote);
+    }
+
+    @Bean("getQuoteFromYahooOnly")
+    @Description("Get stock quote ONLY from Yahoo Finance (no fallback).")
+    public Function<StockQuoteRequest, StockQuoteProvider.StockQuote> getQuoteFromYahooOnly() {
+        return request -> {
+            StockQuoteProvider yahooProvider = compositeStockQuoteProvider.getProviders().stream()
+                    .filter(p -> "Yahoo Finance".equals(p.getProviderName()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException("Yahoo Finance provider not found in composite list."));
+            return yahooProvider.getQuote(request.symbol());
+        };
+    }
+
+    @Bean("getFinnhubQuote")
+    @Description("Get stock quote from Finnhub API. FREE tier: 60 calls/minute.")
+    public Function<StockQuoteRequest, StockQuoteProvider.StockQuote> getQuoteFromFinnhub() {
+        // Applying the same lazy-loading fix here.
+        return request -> {
+            StockQuoteProvider finnhubProvider = compositeStockQuoteProvider.getProviders().stream()
+                    .filter(p -> "Finnhub".equals(p.getProviderName()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException("Finnhub provider not found in composite list."));
+            return finnhubProvider.getQuote(request.symbol());
+        };
+    }
+
+
+    @Bean("getQuoteFromGoogleFinance")
+    @Description("Get stock quote from Google Finance (web scraping). FREE, UNLIMITED, no API key. WARNING: May return stale data, use as last resort.")
+    public Function<StockQuoteRequest, StockQuoteProvider.StockQuote> getQuoteFromGoogleFinance() {
+        // Applying the same lazy-loading fix here.
+        return request -> {
+            StockQuoteProvider googleProvider = compositeStockQuoteProvider.getProviders().stream()
+                    .filter(p -> "Google Finance".equals(p.getProviderName()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException("Google Finance provider not found in composite list."));
+            return googleProvider.getQuote(request.symbol());
+        };
+    }
+
+    @Bean("getRealTimeQuote")
+    @ConditionalOnProperty(name = "finance.alpha-vantage.enabled", havingValue = "true")
+    @Description("Get a real-time stock quote from Alpha Vantage. Use for queries demanding live, up-to-the-second data.")
+    public Function<StockQuoteRequest, StockQuoteProvider.StockQuote> getRealTimeQuote() {
+        return request -> {
+            log.debug("  TOOL CALLED: getRealTimeQuote({}) - Explicitly using Alpha Vantage", request.symbol());
+
+            // Find the specific Alpha Vantage provider from the composite list.
+            StockQuoteProvider alphaVantageProvider = compositeStockQuoteProvider.getProviders().stream()
+                    .filter(p -> "Alpha Vantage".equals(p.getProviderName()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException("Alpha Vantage provider is not available or enabled."));
+
+            return alphaVantageProvider.getQuote(request.symbol());
+        };
+    }
+
+    // --- OTHER TOOLS (Unchanged) ---
 
     @Bean("getStockPrice")
     @Description("Get the real-time price of a stock")
@@ -258,8 +303,6 @@ public class MarketFunctionConfiguration {
         return request -> {
             log.debug(" TOOL CALLED: compareStocks(" + request.symbols() + ")");
 
-            // comparison logic here
-            // For now, simple comparison
             List<String> symbols = request.symbols();
             StringBuilder analysis = new StringBuilder();
 
@@ -286,8 +329,6 @@ public class MarketFunctionConfiguration {
         return request -> {
             log.debug("  TOOL CALLED: getCompanyProfile(" + request.symbol() + ")");
 
-            // TODO: Integrate with real company profile API
-            // This is PLACEHOLDER DATA ONLY - not real company information
             log.warn(" getCompanyProfile returning PLACEHOLDER data - integrate real API!");
 
             return new CompanyResponse(
@@ -305,21 +346,13 @@ public class MarketFunctionConfiguration {
         return request -> {
             log.debug(" TOOL CALLED: calculatePortfolioMetrics(" + request.symbols().size() + " stocks)");
 
-            // portfolio calculation logic here
             List<String> symbols = request.symbols();
-
-            // Calculate average returns
             double totalReturns = 0.0;
             for (String symbol : symbols) {
-                // In real implementation, calculate actual returns
                 totalReturns += 12.5; // Placeholder
             }
             double avgReturns = totalReturns / symbols.size();
-
-            // Calculate volatility (standard deviation of returns)
             double volatility = 0.15; // Placeholder
-
-            // Calculate Sharpe ratio (risk-adjusted returns)
             double riskFreeRate = 0.04; // 4% risk-free rate
             double sharpe = (avgReturns - riskFreeRate) / volatility;
 
@@ -328,133 +361,6 @@ public class MarketFunctionConfiguration {
                     avgReturns,
                     volatility,
                     sharpe
-            );
-        };
-    }
-
-    // ===== NEW: Real-Time Finance API Tool =====
-    @Bean("getRealTimeQuote")
-    @ConditionalOnProperty(name = "finance.api.enabled", havingValue = "true")
-    @Description("Get real-time stock quote from external finance API (Alpha Vantage) including price, change, volume, high/low")
-    public Function<RealTimeQuoteRequest, RealTimeQuoteResponse> getRealTimeQuote() {
-        return request -> {
-            log.debug(" TOOL CALLED: getRealTimeQuote(" + request.symbol() + ") - Fetching from Internet");
-
-            RealTimeFinanceService.StockQuote quote = financeService.getStockQuote(request.symbol());
-
-            return new RealTimeQuoteResponse(
-                    quote.symbol(),
-                    quote.price(),
-                    quote.change(),
-                    quote.changePercent(),
-                    quote.high(),
-                    quote.low(),
-                    quote.volume(),
-                    quote.tradingDay(),
-                    quote.source()
-            );
-        };
-    }
-
-    // ===== Stock Quote Providers: AI can choose which to use =====
-
-    @Bean("getYahooQuote")
-    @Description("Get stock quote with automatic fallback between multiple providers (Yahoo Finance, Alpha Vantage, Google Finance). Recommended as primary tool.")
-    public Function<YahooQuoteRequest, YahooQuoteResponse> getYahooQuote() {
-        return request -> {
-            log.debug(" TOOL CALLED: getYahooQuote(" + request.symbol() + ") - Using composite provider with fallback");
-
-            // Use composite provider which tries providers in priority order
-            StockQuoteProvider.StockQuote quote = compositeStockQuoteProvider.getQuote(request.symbol());
-
-            return new YahooQuoteResponse(
-                    quote.symbol(),
-                    quote.price(),
-                    quote.change(),
-                    quote.changePercent(),
-                    quote.dayHigh(),
-                    quote.dayLow(),
-                    quote.volume(),
-                    quote.companyName(),
-                    quote.source() // This will show which provider succeeded
-            );
-        };
-    }
-
-    @Bean("getQuoteFromYahooOnly")
-    @Description("Get stock quote ONLY from Yahoo Finance (no fallback). Use if you specifically need Yahoo Finance data or if other providers are rate-limited.")
-    public Function<YahooQuoteRequest, YahooQuoteResponse> getQuoteFromYahooOnly() {
-        return request -> {
-            log.debug(" TOOL CALLED: getQuoteFromYahooOnly(" + request.symbol() + ")");
-
-            YahooFinanceService.DelayedQuote quote = yahooFinanceService.getDelayedQuote(request.symbol());
-
-            return new YahooQuoteResponse(
-                    quote.symbol(),
-                    quote.price(),
-                    quote.change(),
-                    quote.changePercent(),
-                    quote.dayHigh(),
-                    quote.dayLow(),
-                    quote.volume(),
-                    quote.companyName(),
-                    "Yahoo Finance (direct)"
-            );
-        };
-    }
-
-    @Bean("getQuoteFromFinnhub")
-    @Description("Get stock quote from Finnhub API. FREE tier: 60 calls/minute (86,400/day). Most reliable free option. Requires API key.")
-    public Function<YahooQuoteRequest, YahooQuoteResponse> getQuoteFromFinnhub() {
-        return request -> {
-            log.debug(" TOOL CALLED: getQuoteFromFinnhub(" + request.symbol() + ")");
-
-            // Find Finnhub provider from composite
-            StockQuoteProvider finnhubProvider = compositeStockQuoteProvider.getProviders().stream()
-                    .filter(p -> "Finnhub".equals(p.getProviderName()))
-                    .findFirst()
-                    .orElseThrow(() -> new RuntimeException("Finnhub provider not found - check if finnhub.api.enabled=true"));
-
-            StockQuoteProvider.StockQuote quote = finnhubProvider.getQuote(request.symbol());
-
-            return new YahooQuoteResponse(
-                    quote.symbol(),
-                    quote.price(),
-                    quote.change(),
-                    quote.changePercent(),
-                    quote.dayHigh(),
-                    quote.dayLow(),
-                    quote.volume(),
-                    quote.companyName(),
-                    quote.source()
-            );
-        };
-    }
-
-    @Bean("getQuoteFromGoogleFinance")
-    @Description("Get stock quote from Google Finance (web scraping). FREE, UNLIMITED, no API key. WARNING: May return stale data, use as last resort.")
-    public Function<YahooQuoteRequest, YahooQuoteResponse> getQuoteFromGoogleFinance() {
-        return request -> {
-            log.debug(" TOOL CALLED: getQuoteFromGoogleFinance(" + request.symbol() + ")");
-
-            // Find Google Finance provider from composite
-            StockQuoteProvider googleProvider = compositeStockQuoteProvider.getProviders().stream()
-                    .filter(p -> "Google Finance".equals(p.getProviderName()))
-                    .findFirst()
-                    .orElseThrow(() -> new RuntimeException("Google Finance provider not found"));
-
-            StockQuoteProvider.StockQuote quote = googleProvider.getQuote(request.symbol());
-
-            return new YahooQuoteResponse(
-                    quote.symbol(),
-                    quote.price(),
-                    quote.change(),
-                    quote.changePercent(),
-                    quote.dayHigh(),
-                    quote.dayLow(),
-                    quote.volume(),
-                    quote.companyName(),
-                    quote.source()
             );
         };
     }

@@ -2,6 +2,7 @@ package com.smurthy.ai.rag.controllers;
 
 import com.smurthy.ai.rag.advisor.ToolInvocationTracker;
 import com.smurthy.ai.rag.dto.ChatResponse;
+import com.smurthy.ai.rag.retrieval.HybridDocumentRetriever;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
@@ -32,20 +33,36 @@ public class RAGDataController {
     public RAGDataController(
             ChatClient.Builder builder,
             VectorStore vectorStore,
-            ChatMemory chatMemory) {
+            ChatMemory chatMemory,
+            @org.springframework.beans.factory.annotation.Autowired(required = false)
+            HybridDocumentRetriever hybridRetriever) {
 
-        // Builder for RAG-based chat (with document retrieval)
-        this.chatClientBuilder = builder
-                .defaultAdvisors(
-                        RetrievalAugmentationAdvisor.builder()
-                                .documentRetriever(VectorStoreDocumentRetriever.builder()
-                                        .similarityThreshold(0.30) // Lowered from 0.50 for better recall
-                                        .topK(10) // Retrieve more chunks for timeline/comparison questions
-                                        .vectorStore(vectorStore)
-                                        .build())
-                                .build(),
-                        MessageChatMemoryAdvisor.builder(chatMemory)
-                                .build());
+        // Builder for RAG-based chat
+        // If HybridDocumentRetriever is available, use it (hybrid retrieval with reranking)
+        // Otherwise, fall back to basic vector search
+        if (hybridRetriever != null) {
+            log.info("Using Hybrid Retrieval (Dense + Sparse + Reranking)");
+            this.chatClientBuilder = builder
+                    .defaultAdvisors(
+                            RetrievalAugmentationAdvisor.builder()
+                                    .documentRetriever(hybridRetriever)
+                                    .build(),
+                            MessageChatMemoryAdvisor.builder(chatMemory)
+                                    .build());
+        } else {
+            log.info("Using basic Vector Store retrieval (HybridRetriever not available)");
+            this.chatClientBuilder = builder
+                    .defaultAdvisors(
+                            RetrievalAugmentationAdvisor.builder()
+                                    .documentRetriever(VectorStoreDocumentRetriever.builder()
+                                            .similarityThreshold(0.50)
+                                            .topK(10)
+                                            .vectorStore(vectorStore)
+                                            .build())
+                                    .build(),
+                            MessageChatMemoryAdvisor.builder(chatMemory)
+                                    .build());
+        }
 
         // Builder for function calling (NO RAG advisor - allows tool usage)
         this.functionCallingBuilder = builder

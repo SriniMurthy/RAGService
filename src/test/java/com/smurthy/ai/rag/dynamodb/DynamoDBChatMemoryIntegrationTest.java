@@ -1,5 +1,6 @@
 package com.smurthy.ai.rag.dynamodb;
 
+import com.smurthy.ai.rag.BaseIntegrationTest;
 import org.junit.jupiter.api.*;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-class DynamoDBChatMemoryIntegrationTest {
+class DynamoDBChatMemoryIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private TestRestTemplate restTemplate;

@@ -29,6 +29,7 @@
     <properties>
         <java.version>21</java.version>
         <spring-ai.version>1.0.3</spring-ai.version>
+        <lombok.version>1.18.34</lombok.version>
     </properties>
 
     <dependencies>
@@ -42,7 +43,15 @@
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-jdbc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.ai</groupId>
@@ -54,7 +63,6 @@
             <version>1.1.0-M3</version>
         </dependency>-->
 
-        <!-- NEW artifact name for OpenAI -->
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-starter-model-openai</artifactId>
@@ -66,7 +74,6 @@
             <artifactId>spring-ai-starter-model-anthropic</artifactId>
         </dependency>
 
-        <!-- NEW artifact name for PGVector -->
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-starter-vector-store-pgvector</artifactId>
@@ -103,6 +110,23 @@
             <groupId>com.rometools</groupId>
             <artifactId>rome</artifactId>
             <version>2.1.0</version>
+        </dependency>
+
+        <!-- Apache Lucene for BM25 scoring and text analysis -->
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-core</artifactId>
+            <version>9.9.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-queryparser</artifactId>
+            <version>9.9.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-analysis-common</artifactId>
+            <version>9.9.2</version>
         </dependency>
 
         <!-- AWS DynamoDB SDK v2 for chat history persistence -->
@@ -170,7 +194,6 @@
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
-            <!-- If you use a failsafe plugin for integration tests, apply the same config there -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>

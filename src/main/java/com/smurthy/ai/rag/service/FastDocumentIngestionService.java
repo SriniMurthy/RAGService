@@ -26,6 +26,7 @@ public class FastDocumentIngestionService {
 
     private final VectorStore vectorStore;
     private final TextSplitter textSplitter;
+    private final BM25SearchService bm25SearchService;
     private final int batchSize;
     private final int parallelEmbeddings;
     private static final Logger log = LoggerFactory.getLogger(FastDocumentIngestionService.class);
@@ -34,10 +35,12 @@ public class FastDocumentIngestionService {
     public FastDocumentIngestionService(
             VectorStore vectorStore,
             TextSplitter textSplitter,
+            BM25SearchService bm25SearchService,
             @Value("${app.ingestion.batch-size:50}") int batchSize,
             @Value("${app.ingestion.parallel-embeddings:3}") int parallelEmbeddings) {
         this.vectorStore = vectorStore;
         this.textSplitter = textSplitter;
+        this.bm25SearchService = bm25SearchService;
         this.batchSize = batchSize;
         this.parallelEmbeddings = parallelEmbeddings;
     }
@@ -60,6 +63,16 @@ public class FastDocumentIngestionService {
         embedChunksInParallel(documents);
         long embedTime = System.currentTimeMillis() - embedStart;
         log.debug("✓ Embedding: " + embedTime + "ms");
+
+        // Index in BM25 for hybrid retrieval
+        long bm25Start = System.currentTimeMillis();
+        try {
+            bm25SearchService.indexDocuments(documents);
+            long bm25Time = System.currentTimeMillis() - bm25Start;
+            log.debug("✓ BM25 Indexing: " + bm25Time + "ms");
+        } catch (Exception e) {
+            log.warn("BM25 indexing failed (continuing anyway): " + e.getMessage());
+        }
 
         long totalTime = System.currentTimeMillis() - startTime;
         log.debug("\n═══════════════════════════════════════════════");

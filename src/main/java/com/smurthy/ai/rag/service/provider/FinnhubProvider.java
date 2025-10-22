@@ -2,12 +2,15 @@ package com.smurthy.ai.rag.service.provider;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jdk.jfr.DataAmount;
+import lombok.Data;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
+
 
 /**
  * Finnhub implementation of StockQuoteProvider.
@@ -18,20 +21,22 @@ import org.springframework.web.client.RestTemplate;
  * Priority: 2 (between Alpha Vantage and Yahoo Finance)
  *
  * Enable by setting:
- *   finnhub.api.enabled=true
- *   finnhub.api.key=your_api_key
+ *   finance.finnhub.enabled=true
+ *   finance.finnhub.key=your_api_key
  */
 @Component
-@ConditionalOnProperty(name = "finnhub.api.enabled", havingValue = "true")
+@Data
+@ConditionalOnProperty(name = "finance.finnhub.enabled", havingValue = "true")
 public class FinnhubProvider implements StockQuoteProvider {
 
     private static final Logger log = LoggerFactory.getLogger(FinnhubProvider.class);
-    // Most permissive though slightly less reliable
-    private static final int PRIORITY = 1;
     private static final String BASE_URL = "https://finnhub.io/api/v1";
 
-    @Value("${finnhub.api.key:}")
+    @Value("${finance.finnhub.key:}")
     private String apiKey;
+
+    @Value("${finance.finnhub.enabled:false}")
+    private boolean enabled;
 
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
@@ -108,10 +113,11 @@ public class FinnhubProvider implements StockQuoteProvider {
         }
     }
 
-    /**
-     * Get company name from Finnhub profile endpoint.
-     * This is cached to avoid excessive API calls.
-     */
+    @Override
+    public boolean isAvailable() {
+        return true;
+    }
+
     private String getCompanyName(String symbol) {
         try {
             String url = String.format("%s/stock/profile2?symbol=%s&token=%s", BASE_URL, symbol, apiKey);
@@ -131,38 +137,22 @@ public class FinnhubProvider implements StockQuoteProvider {
     }
 
     @Override
-    public boolean isAvailable() {
-        // Check if API key is configured
-        if (apiKey == null || apiKey.trim().isEmpty()) {
-            log.debug("Finnhub API key not configured");
-            return false;
-        }
-
-        // Simple health check - try to fetch a well-known symbol
-        try {
-            String url = String.format("%s/quote?symbol=AAPL&token=%s", BASE_URL, apiKey);
-            String response = restTemplate.getForObject(url, String.class);
-
-            if (response != null && !response.isEmpty()) {
-                JsonNode root = objectMapper.readTree(response);
-                // Check if we got valid data (current price should be > 0)
-                return root.has("c") && root.get("c").asDouble() > 0;
-            }
-
-            return false;
-        } catch (Exception e) {
-            log.debug("Finnhub health check failed: {}", e.getMessage());
-            return false;
-        }
-    }
-
-    @Override
     public String getProviderName() {
         return "Finnhub";
     }
 
+
+
+    @Value("${finance.finnhub.priority:10}")
+    private int priority;
+
     @Override
     public int getPriority() {
-        return PRIORITY;
+        return priority;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return this.enabled;
     }
 }

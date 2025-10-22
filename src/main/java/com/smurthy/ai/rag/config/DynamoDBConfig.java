@@ -98,7 +98,7 @@ public class DynamoDBConfig {
         }
 
         DynamoDbClient client = clientBuilder.build();
-        this.dynamoDbClient = client;  // Store for @PostConstruct
+        this.dynamoDbClient = client;
         return client;
     }
 
@@ -110,7 +110,7 @@ public class DynamoDBConfig {
         DynamoDbEnhancedClient client = DynamoDbEnhancedClient.builder()
                 .dynamoDbClient(dynamoDbClient)
                 .build();
-        this.dynamoDbEnhancedClient = client;  // Store for @PostConstruct
+        this.dynamoDbEnhancedClient = client;
         return client;
     }
 

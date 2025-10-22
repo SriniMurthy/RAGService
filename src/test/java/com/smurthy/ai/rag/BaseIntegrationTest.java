@@ -1,6 +1,8 @@
 package com.smurthy.ai.rag;
 
 import com.smurthy.ai.rag.service.TemporalQueryService;
+import com.smurthy.ai.rag.service.provider.CompositeStockQuoteProvider;
+import com.smurthy.ai.rag.service.provider.FinnhubProvider;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
@@ -12,6 +14,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.util.FileSystemUtils;
 
 import java.io.IOException;
@@ -25,6 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles({"test", "data-ingestion"}) // Activate both profiles
+@TestPropertySource(properties = { "finance.api.enabled=true" })
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class BaseIntegrationTest {
 
@@ -33,6 +37,12 @@ public abstract class BaseIntegrationTest {
 
     @MockBean
     protected TemporalQueryService temporalQueryService;
+
+    @MockBean
+    protected FinnhubProvider finnhubProvider;
+
+    @MockBean
+    protected CompositeStockQuoteProvider compositeStockQuoteProvider;
 
     @Value("${rag.documents.watch-dir}")
     private String watchDir;

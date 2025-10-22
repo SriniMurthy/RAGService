@@ -20,7 +20,8 @@ public class ExcelDocumentReader implements DocumentReader {
     @Override
     public boolean supports(Resource resource) {
         String filename = resource.getFilename();
-        return filename != null && (filename.toLowerCase().endsWith(".xls") || filename.toLowerCase().endsWith(".xlsx"));
+        //Let's disable this reader for now, for comparison
+        return filename != null && (filename.toLowerCase().endsWith(".exls") || filename.toLowerCase().endsWith(".exlsx"));
     }
 
     @Override

@@ -109,7 +109,8 @@ public class TemporalQueryService {
 
         if (filterExpression.contains(">=") && filterExpression.contains("<=")) {
             // Extract dates from format: "start_date >= '2021-01-01' AND end_date <= '2021-12-31'"
-            String[] parts = filterExpression.split("AND");
+            // or: "metadata[\"start_date\"] <= '2023-01-15' && metadata[\"end_date\"] >= '2023-01-15'"
+            String[] parts = filterExpression.split("\\s+(AND|&&)\\s+");
             for (String part : parts) {
                 if (part.contains("start_date")) {
                     startDate = part.replaceAll(".*'([^']+)'.*", "$1");
@@ -146,6 +147,7 @@ public class TemporalQueryService {
                 SELECT id, content, metadata,
                        1 - (embedding <=> ?::vector) as similarity
                 FROM vector_store
+        
                 WHERE (metadata->>'start_date')::date <= ?::date
                   AND (metadata->>'end_date')::date >= ?::date
                 ORDER BY embedding <=> ?::vector

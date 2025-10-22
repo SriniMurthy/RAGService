@@ -64,6 +64,14 @@ spring:
     compose:
       lifecycle-management: start_only
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    shutdown:
+      enabled: true
 
 server:
   servlet:
@@ -73,24 +81,45 @@ app:
   ingestion:
     batch-size: 50
     parallel-embeddings: 5
+  retrieval:
+    # Hybrid retrieval configuration
+    topK: 5                          # Final number of documents to return after reranking
+    similarityThreshold: 0.60        # Raised from 0.30 - better precision with hybrid retrieval
+    candidateMultiplier: 4           # Retrieve topK * 4 candidates for reranking (e.g., 5 * 4 = 20)
 
 # ===== REAL-TIME FINANCE APIs =====
-
-# Alpha Vantage (25 requests/day free tier)
-# Get free key at: https://www.alphavantage.co/support/#api-key
 finance:
-  api:
+  # Agentic Provider Selection (LLM-powered intelligent routing)
+  agentic-selection:
+    enabled: true  # Set to true to enable LLM-based provider selection
+    fallback-on-failure: true  # Fallback to traditional priority-based if agentic selection fails
+
+  # Alpha Vantage (25 requests/day free tier)
+  # Get free key at: https://www.alphavantage.co/support/#api-key
+  alpha-vantage:
     enabled: true  # Set to true and add your key
+    priority: 10 # Highest priority for real-time data
     key: demo
     base-url: https://www.alphavantage.co
 
-# Finnhub (60 requests/minute free tier = 3600/hour, 86,400/day)
-# Get free key at: https://finnhub.io/register
-# RECOMMENDED: Much higher limits than Alpha Vantage
-finnhub:
-  api:
+  # Finnhub (60 requests/minute free tier = 3600/hour, 86,400/day)
+  # Get free key at: https://finnhub.io/register
+  # RECOMMENDED: Much higher limits than Alpha Vantage (MOST LIBERAL PROVIDER)
+  finnhub:
     enabled: true  # Set to true and add your key
+    priority: 20 # Second priority, good for fundamentals
     key: ${FINNHUB_API_KEY}
+
+  # Yahoo Finance (Web scraping, no key needed)
+  yahoo:
+    enabled: true
+    priority: 100 # Low priority fallback
+
+  # Google Finance (Web scraping, no key needed)
+  google:
+    enabled: true
+    priority: 110 # Lowest priority fallback
+
 logging:
   level:
     org.apache.pdfbox.pdmodel.font.FileSystemFontProvider: ERROR

@@ -13,7 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * These tests ensure the agentic infrastructure is properly set up.
  */
 @SpringBootTest
-public class InfrastructureTests {
+public class InfrastructureTests extends BaseIntegrationTest {
 
     @Autowired
     private ApplicationContext applicationContext;
