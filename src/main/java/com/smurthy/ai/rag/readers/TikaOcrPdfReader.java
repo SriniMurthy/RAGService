@@ -54,10 +54,11 @@ public class TikaOcrPdfReader implements DocumentReader {
         long startTime = System.currentTimeMillis();
 
         try {
-            // Spring AI's TikaDocumentReader automatically:
-            // - Detects if OCR is needed
-            // - Uses Tesseract for scanned PDFs
-            // - Returns Spring AI Documents
+            /* Spring AI's TikaDocumentReader automatically:
+              - Detects if OCR is needed
+              - Uses Tesseract for scanned PDFs
+             - Returns Spring AI Documents
+             */
             TikaDocumentReader tikaReader = new TikaDocumentReader(resource);
             List<Document> documents = tikaReader.get();
 
