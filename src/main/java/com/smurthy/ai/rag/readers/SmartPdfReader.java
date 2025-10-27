@@ -47,6 +47,7 @@ import java.util.List;
  */
 @Component("smartPdfReader")
 @ConditionalOnProperty(name = "pdf.reader.smart", havingValue = "true", matchIfMissing = false)
+@org.springframework.core.annotation.Order(1)
 public class SmartPdfReader implements DocumentReader {
 
     private static final Logger log = LoggerFactory.getLogger(SmartPdfReader.class);

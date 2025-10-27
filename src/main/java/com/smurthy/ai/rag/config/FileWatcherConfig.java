@@ -22,10 +22,11 @@ import java.io.File;
  * FileWatcherConfig sets up a file-watching mechanism using Spring Integration.
  * It monitors a directory for new files and triggers an ingestion process.
  * The parent directory of a file is used as its category.
+ * Active for both data-ingestion and dataset-generation profiles.
  */
 @Configuration
 @EnableIntegration
-@Profile("data-ingestion")
+@Profile({"data-ingestion", "dataset-generation"})
 public class FileWatcherConfig {
 
     private static final Logger log = LoggerFactory.getLogger(FileWatcherConfig.class);

@@ -73,12 +73,15 @@ public class FastDocumentIngestionService {
         } catch (Exception e) {
             log.warn("BM25 indexing failed (continuing anyway): " + e.getMessage());
         }
-
-        long totalTime = System.currentTimeMillis() - startTime;
-        log.debug("\n═══════════════════════════════════════════════");
-        log.debug("Total time: " + totalTime + "ms");
-        log.debug("Throughput: " + (documents.size() * 1000 / totalTime) + " chunks/sec");
-        log.debug("═══════════════════════════════════════════════\n");
+       try {
+           long totalTime = System.currentTimeMillis() - startTime;
+           log.debug("\n═══════════════════════════════════════════════");
+           log.debug("Total time: " + totalTime + "ms");
+           log.debug("Throughput: " + (documents.size() * 1000 / totalTime) + " chunks/sec");
+           log.debug("═══════════════════════════════════════════════\n");
+       } catch (Exception ex) {
+           log.error("Possible error ingesting document "+ex.getMessage());
+       }
     }
 
     /**

@@ -18,8 +18,11 @@ import java.util.Map;
  *
  * Handles problematic PDFs that cause sorting errors in Spring AI's layout-based reader
  * by falling back to simpler extraction strategies.
+ *
+ * Note: This reader has lower priority than SmartPdfReader when both are enabled.
  */
 @Component
+@org.springframework.core.annotation.Order(100)
 public class PdfDocumentReader implements DocumentReader {
 
     private static final Logger log = LoggerFactory.getLogger(PdfDocumentReader.class);
