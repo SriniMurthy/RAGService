@@ -131,6 +131,14 @@ logging:
   level:
     org.apache.pdfbox.pdmodel.font.FileSystemFontProvider: ERROR
 
+# ===== RAFT DATASET GENERATION CONFIGURATION =====
+raft:
+  # Maximum number of concurrent LLM API calls to prevent rate limiting
+  # OpenAI free tier: ~3 requests/min, Tier 1: 30K tokens/min
+  # Adjust based on your OpenAI tier and token usage per request
+  # Recommended: 5-10 for Tier 1, 2-3 for free tier
+  max-concurrent-llm-calls: 10
+
 # ===== DYNAMODB CHAT MEMORY CONFIGURATION =====
 # Persistent chat history using DynamoDB Local (or AWS DynamoDB)
 chat:

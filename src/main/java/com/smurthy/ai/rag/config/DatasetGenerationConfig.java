@@ -36,10 +36,11 @@ public class DatasetGenerationConfig {
 
     /**
      * Creates a CommandLineRunner that triggers the dataset generation logic.
-     * The process is manually triggered by running the application with this profile
-     * and specifying a category via a system property.
+     * The process is manually triggered by running the application with this profile.
      *
-     * Example: ./mvnw spring-boot:run -Dspring-boot.run.profiles=dataset-generation -Dgenerate.category=finance
+     * Examples:
+     * - All categories: ./mvnw spring-boot:run -Dspring-boot.run.profiles=dataset-generation
+     * - Specific category: ./mvnw spring-boot:run -Dspring-boot.run.profiles=dataset-generation -Dgenerate.category=finance
      */
     @Bean
     public CommandLineRunner generateRaftDataset(RAFTDatasetGenerationService service) {
@@ -47,12 +48,12 @@ public class DatasetGenerationConfig {
             String category = System.getProperty("generate.category");
 
             if (category == null || category.trim().isEmpty()) {
-                log.error("Missing required system property 'generate.category'.");
-                log.error("Please run with: -Dgenerate.category=<your_category_name>");
-                return;
+                log.info("No 'generate.category' specified. Generating datasets for ALL categories...");
+                service.generateForAllCategories();
+            } else {
+                log.info("Generating dataset for specific category: '{}'", category);
+                service.generateForCategory(category);
             }
-
-            service.generateForCategory(category);
         };
     }
 }
