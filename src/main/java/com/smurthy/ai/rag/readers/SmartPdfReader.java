@@ -100,7 +100,7 @@ public class SmartPdfReader implements DocumentReader {
 
             // If low quality and OCR is enabled, try Tier 2
             if (quality == ExtractionQuality.LOW && enableOcr && ocrReader != null) {
-                log.warn("⚠ Low quality detected - attempting TIER 2 (OCR)...");
+                log.warn("Low quality detected - attempting TIER 2 (OCR)...");
                 List<Document> tier2Docs = tryTier2(resource, tier1Docs);
 
                 if (tier2Docs != null) {
@@ -110,14 +110,14 @@ public class SmartPdfReader implements DocumentReader {
 
             // Return Tier 1 results even if low quality (OCR disabled or failed)
             if (quality == ExtractionQuality.LOW && !enableOcr) {
-                log.warn("⚠ Low quality, but OCR disabled - using TIER 1 anyway");
+                log.warn("Low quality, but OCR disabled - using TIER 1 anyway");
             }
             return enrichMetadata(tier1Docs, "Tier1-PDFBox-LowQuality");
         }
 
         // Tier 1 completely failed - try Tier 2 directly
         if (enableOcr && ocrReader != null) {
-            log.error("✗ TIER 1 failed completely - attempting TIER 2 (OCR)...");
+            log.error("TIER 1 failed completely - attempting TIER 2 (OCR)...");
             return tryTier2Fallback(resource);
         }
 
@@ -165,17 +165,17 @@ public class SmartPdfReader implements DocumentReader {
 
             // Use OCR if it extracted significantly more text
             if (tier2AvgChars > tier1AvgChars * ocrImprovementThreshold) {
-                log.info("✓ SUCCESS: TIER 2 produced {:.1f}x more text - using OCR results",
+                log.info("SUCCESS: TIER 2 produced {:.1f}x more text - using OCR results",
                         tier2AvgChars / tier1AvgChars);
                 return enrichMetadata(ocrDocs, "Tier2-OCR-Better");
             } else {
-                log.info("✓ SUCCESS: TIER 1 was comparable - using original PDFBox results");
+                log.info("SUCCESS: TIER 1 was comparable - using original PDFBox results");
                 return enrichMetadata(tier1Docs, "Tier1-PDFBox-AfterOCRComparison");
             }
 
         } catch (Exception e) {
-            log.error("✗ TIER 2 (OCR) failed: {}", e.getMessage());
-            log.info("→ Falling back to TIER 1 results");
+            log.error(" TIER 2 (OCR) failed: {}", e.getMessage());
+            log.info("Falling back to TIER 1 results");
             return enrichMetadata(tier1Docs, "Tier1-PDFBox-OCRFailed");
         }
     }
@@ -186,10 +186,10 @@ public class SmartPdfReader implements DocumentReader {
     private List<Document> tryTier2Fallback(Resource resource) {
         try {
             List<Document> ocrDocs = ocrReader.read(resource);
-            log.info("✓ SUCCESS: TIER 2 (OCR) recovered from TIER 1 failure");
+            log.info("SUCCESS: TIER 2 (OCR) recovered from TIER 1 failure");
             return enrichMetadata(ocrDocs, "Tier2-OCR-Fallback");
         } catch (Exception e) {
-            log.error("✗ TIER 2 also failed: {}", e.getMessage());
+            log.error("TIER 2 also failed: {}", e.getMessage());
             throw new RuntimeException("All PDF reading tiers failed", e);
         }
     }

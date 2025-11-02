@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG + Multi-Agent Agentic System Architecture</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #2c3e50;
+            border-bottom: 4px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        h2 {
+            color: #2c3e50;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            border-left: 5px solid #3498db;
+            padding-left: 15px;
+        }
+
+        h3 {
+            color: #34495e;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+        }
+
+        h4 {
+            color: #555;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .tech-stack {
+            background: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-weight: 500;
+        }
+
+        .diagram {
+            background: #fff;
+            border: 2px solid #3498db;
+            border-radius: 8px;
+            padding: 30px;
+            margin: 30px 0;
+            overflow-x: auto;
+        }
+
+        .flow-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .flow-arrow {
+            text-align: center;
+            font-size: 24px;
+            color: #3498db;
+            margin: 5px 0;
+        }
+
+        .agent-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .agent-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .agent-card h4 {
+            color: white;
+            margin-top: 0;
+            font-size: 1.2em;
+            border-bottom: 2px solid rgba(255,255,255,0.3);
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+
+        .agent-card ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .agent-card li:before {
+            content: "▸ ";
+            font-weight: bold;
+        }
+
+        .sequence-diagram {
+            background: white;
+            padding: 20px;
+            border: 1px solid #ddd;
+            margin: 20px 0;
+            overflow-x: auto;
+        }
+
+        .sequence-row {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+            min-height: 40px;
+        }
+
+        .sequence-actor {
+            min-width: 120px;
+            font-weight: 600;
+            color: #2c3e50;
+            text-align: center;
+            background: #ecf0f1;
+            padding: 8px;
+            border-radius: 4px;
+            margin: 0 5px;
+        }
+
+        .sequence-message {
+            flex: 1;
+            padding: 8px 15px;
+            background: #e8f4f8;
+            border-left: 3px solid #3498db;
+            margin: 0 10px;
+            border-radius: 4px;
+        }
+
+        .sequence-response {
+            background: #f0f9ff;
+            border-left-color: #9b59b6;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        tr:hover {
+            background: #f5f5f5;
+        }
+
+        .checkmark {
+            color: #27ae60;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        .cross {
+            color: #e74c3c;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        .warning {
+            color: #f39c12;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        .code-block {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 15px 0;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.4;
+        }
+
+        .highlight-box {
+            background: #fff3cd;
+            border-left: 5px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .info-box {
+            background: #d1ecf1;
+            border-left: 5px solid #17a2b8;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .success-box {
+            background: #d4edda;
+            border-left: 5px solid #28a745;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .component-box {
+            background: white;
+            border: 2px solid #3498db;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .component-header {
+            background: #3498db;
+            color: white;
+            padding: 10px 15px;
+            margin: -20px -20px 15px -20px;
+            border-radius: 6px 6px 0 0;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+
+        ul, ol {
+            margin-left: 25px;
+            margin-bottom: 15px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .metric-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .metric-label {
+            color: #555;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            .container {
+                box-shadow: none;
+                padding: 20px;
+            }
+            .diagram, .component-box {
+                page-break-inside: avoid;
+            }
+            h2 {
+                page-break-before: always;
+            }
+            h2:first-of-type {
+                page-break-before: auto;
+            }
+        }
+
+        .toc {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 30px 0;
+        }
+
+        .toc h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+
+        .toc ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .toc li {
+            padding: 5px 0;
+        }
+
+        .toc a {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .toc a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏗️ RAG + Multi-Agent Agentic System Architecture</h1>
+
+        <div class="success-box">
+            <h3>Elevator Pitch</h3>
+            <p style="font-size: 1.1em; line-height: 1.8;">
+                "A production-grade RAG system with intelligent multi-agent orchestration. Uses LLM-based routing to distribute queries across specialized agents (Financial, Research, News, Weather), executes them in parallel, and synthesizes results into a unified answer. Features ReACT agent loops, hybrid vector search with cross-encoder reranking, and conversation memory persistence."
+            </p>
+        </div>
+
+
+        <div class="info-box">
+            <strong>System Overview:</strong> A production-grade Retrieval-Augmented Generation (RAG) system with multi-agent orchestration, featuring intelligent query routing, specialized domain agents, and LLM-based decision-making.
+        </div>
+
+        <div class="tech-stack">
+            <strong>Tech Stack:</strong> Spring Boot 3.2.6 | Spring AI 1.0.3 | OpenAI GPT-4o | PostgreSQL + PGVector | DynamoDB
+        </div>
+
+        <div class="toc">
+            <h3>📑 Table of Contents</h3>
+            <ul>
+                <li><a href="#overview">System Architecture Overview</a></li>
+                <li><a href="#sequence">Sequence Diagrams</a></li>
+                <li><a href="#components">Component Details</a></li>
+                <li><a href="#rag">RAG Infrastructure</a></li>
+                <li><a href="#comparison">Industry Comparison</a></li>
+                <li><a href="#metrics">Performance Metrics</a></li>
+                <li><a href="#pitch">Summary for Pitch</a></li>
+            </ul>
+        </div>
+
+        <h2 id="overview">🏗️ System Architecture Overview</h2>
+
+        <div class="diagram">
+            <div class="flow-box">USER REQUEST → POST /RAG/ask</div>
+            <div class="flow-arrow">▼</div>
+            <div class="flow-box">SimpleAgenticController<br><small>Session Management • Request Validation</small></div>
+            <div class="flow-arrow">▼</div>
+            <div class="flow-box" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                STEP 1: Query Routing (LLM-Based)<br>
+                <strong>QueryRouterAgent</strong>
+            </div>
+            <div class="flow-arrow">▼</div>
+            <div class="component-box">
+                <div class="component-header">QueryIntent Analysis</div>
+                <strong>Input:</strong> "What's AAPL price and weather in NYC?"<br><br>
+                <strong>Output JSON:</strong>
+                <div class="code-block">{
+  "needsFinancial": true,
+  "needsResearch": false,
+  "needsNews": false,
+  "needsWeather": true,
+  "reasoning": "Query asks for stock price and weather"
+}</div>
+            </div>
+            <div class="flow-arrow">▼</div>
+            <div class="flow-box" style="background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);">
+                STEP 2: Parallel Agent Execution
+            </div>
+
+            <div class="agent-grid">
+                <div class="agent-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <h4>FinancialAgent</h4>
+                    <ul>
+                        <li>getYahooQuote</li>
+                        <li>analyzeRatios</li>
+                        <li>getHistoricalPrices</li>
+                    </ul>
+                    <strong>Result:</strong> "$225"
+                </div>
+
+                <div class="agent-card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                    <h4>WeatherAgent</h4>
+                    <ul>
+                        <li>getWeatherByLocation</li>
+                        <li>getWeatherByZipCode</li>
+                    </ul>
+                    <strong>Result:</strong> "72°F, Sunny"
+                </div>
+
+                <div class="agent-card" style="background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);">
+                    <h4>ResearchAgent</h4>
+                    <ul>
+                        <li>queryDocuments</li>
+                        <li>queryByYear</li>
+                        <li>queryAdvanced</li>
+                    </ul>
+                    <strong>Status:</strong> Not invoked
+                </div>
+
+                <div class="agent-card" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);">
+                    <h4>NewsAgent</h4>
+                    <ul>
+                        <li>getMarketNews</li>
+                        <li>getHeadlinesByCategory</li>
+                    </ul>
+                    <strong>Status:</strong> Not invoked
+                </div>
+            </div>
+
+            <div class="flow-arrow">▼</div>
+            <div class="flow-box" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                STEP 3: Result Aggregation (LLM-Based)<br>
+                <strong>AggregatorAgent</strong>
+            </div>
+            <div class="flow-arrow">▼</div>
+            <div class="success-box">
+                <strong>Final Synthesized Answer:</strong><br>
+                "AAPL is currently trading at $225. The weather in NYC is 72°F and sunny."
+            </div>
+        </div>
+
+        <h2 id="sequence">🔄 Sequence Diagrams</h2>
+
+        <h3>Multi-Agent Query Flow</h3>
+        <div class="sequence-diagram">
+            <div class="sequence-row">
+                <div class="sequence-actor">User</div>
+                <div class="sequence-message">POST /ask {"question": "..."}</div>
+                <div class="sequence-actor">Controller</div>
+            </div>
+
+            <div class="sequence-row">
+                <div class="sequence-actor">Controller</div>
+                <div class="sequence-message">analyze(query)</div>
+                <div class="sequence-actor">RouterAgent</div>
+            </div>
+
+            <div class="sequence-row">
+                <div class="sequence-actor">RouterAgent</div>
+                <div class="sequence-message sequence-response">QueryIntent {financial: true, research: true}</div>
+                <div class="sequence-actor">Controller</div>
+            </div>
+
+            <div class="sequence-row">
+                <div class="sequence-actor">Controller</div>
+                <div class="sequence-message">execute(query, conversationId) [PARALLEL]</div>
+                <div class="sequence-actor">FinancialAgent</div>
+            </div>
+
+            <div class="sequence-row">
+                <div class="sequence-actor">Controller</div>
+                <div class="sequence-message">execute(query, conversationId) [PARALLEL]</div>
+                <div class="sequence-actor">ResearchAgent</div>
+            </div>
+
+            <div class="sequence-row">
+                <div class="sequence-actor">FinancialAgent</div>
+                <div class="sequence-message sequence-response">AgentResult {success: true, result: "AAPL $225"}</div>
+                <div class="sequence-actor">Controller</div>
+            </div>
+
+            <div class="sequence-row">
+                <div class="sequence-actor">ResearchAgent</div>
+                <div class="sequence-message sequence-response">AgentResult {success: true, result: "Docs mention..."}</div>
+                <div class="sequence-actor">Controller</div>
+            </div>
+
+            <div class="sequence-row">
+                <div class="sequence-actor">Controller</div>
+                <div class="sequence-message">synthesize(question, [results])</div>
+                <div class="sequence-actor">Aggregator</div>
+            </div>
+
+            <div class="sequence-row">
+                <div class="sequence-actor">Aggregator</div>
+                <div class="sequence-message sequence-response">Unified answer combining all agent results</div>
+                <div class="sequence-actor">Controller</div>
+            </div>
+
+            <div class="sequence-row">
+                <div class="sequence-actor">Controller</div>
+                <div class="sequence-message sequence-response">AskResponse {answer: "...", executionTimeMs: 2345}</div>
+                <div class="sequence-actor">User</div>
+            </div>
+        </div>
+
+        <h3>ReACT Agent Loop (Streaming)</h3>
+        <div class="sequence-diagram">
+            <div class="sequence-row">
+                <div class="sequence-actor">User</div>
+                <div class="sequence-message">GET /askStream?q=What+is+AAPL+price</div>
+                <div class="sequence-actor">Controller</div>
+            </div>
+
+            <div class="sequence-row">
+                <div class="sequence-actor">Controller</div>
+                <div class="sequence-message">SSE: THOUGHT → "Iteration 1: Analyzing..."</div>
+                <div class="sequence-actor">User</div>
+            </div>
+
+            <div class="sequence-row">
+                <div class="sequence-actor">Controller</div>
+                <div class="sequence-message">LLM.prompt("What action should I take?")</div>
+                <div class="sequence-actor">LLM + Tools</div>
+            </div>
+
+            <div class="sequence-row">
+                <div class="sequence-actor">LLM + Tools</div>
+                <div class="sequence-message sequence-response">Tool Call: getYahooQuote("AAPL") → "$225"</div>
+                <div class="sequence-actor">Controller</div>
+            </div>
+
+            <div class="sequence-row">
+                <div class="sequence-actor">Controller</div>
+                <div class="sequence-message">SSE: OBSERVATION → "AAPL is trading at $225"</div>
+                <div class="sequence-actor">User</div>
+            </div>
+
+            <div class="sequence-row">
+                <div class="sequence-actor">Controller</div>
+                <div class="sequence-message">LLM.prompt("Can you answer? YES/NO")</div>
+                <div class="sequence-actor">LLM</div>
+            </div>
+
+            <div class="sequence-row">
+                <div class="sequence-actor">LLM</div>
+                <div class="sequence-message sequence-response">YES - AAPL is trading at $225.30</div>
+                <div class="sequence-actor">Controller</div>
+            </div>
+
+            <div class="sequence-row">
+                <div class="sequence-actor">Controller</div>
+                <div class="sequence-message">SSE: ANSWER → Final answer</div>
+                <div class="sequence-actor">User</div>
+            </div>
+
+            <div class="sequence-row">
+                <div class="sequence-actor">Controller</div>
+                <div class="sequence-message">SSE: COMPLETE → "1 iteration, 1.2s, 1500 tokens"</div>
+                <div class="sequence-actor">User</div>
+            </div>
+        </div>
+
+        <h2 id="components">🧩 Component Details</h2>
+
+        <div class="component-box">
+            <div class="component-header">1. QueryRouterAgent - LLM-Based Intent Detection</div>
+            <strong>Responsibility:</strong> Analyzes user queries and determines which specialized agents to invoke<br><br>
+
+            <strong>System Prompt:</strong>
+            <div class="code-block">Analyze user queries and determine which specialized agents are needed.
+
+AVAILABLE AGENTS:
+- FinancialAgent: Stock prices, market analysis, predictions
+- ResearchAgent: User's uploaded documents, RAG queries
+- NewsAgent: Current events, breaking news, headlines
+- WeatherAgent: Weather queries, forecasts
+
+Respond with JSON:
+{
+  "needsFinancial": true/false,
+  "needsResearch": true/false,
+  "needsNews": true/false,
+  "needsWeather": true/false,
+  "reasoning": "explanation"
+}</div>
+
+            <strong>Key Features:</strong>
+            <ul>
+                <li>✅ LLM-based decision making (no hardcoded rules)</li>
+                <li>✅ Structured JSON output for reliable parsing</li>
+                <li>✅ Fallback mechanism: activates all agents if routing fails</li>
+                <li>✅ Handles complex queries requiring multiple agents</li>
+            </ul>
+        </div>
+
+        <div class="component-box">
+            <div class="component-header">2. Specialized Agents - Domain Experts</div>
+
+            <h4>FinancialAgent</h4>
+            <strong>Tools:</strong> getYahooQuote, getRealTimeQuote, getFinnhubQuote, analyzeFinancialRatios, getHistoricalPrices, getMarketMovers, getEconomicIndicators<br>
+            <strong>Purpose:</strong> Stock prices, market analysis, predictions, financial ratios
+
+            <h4>ResearchAgent</h4>
+            <strong>Tools:</strong> queryDocuments, queryDocumentsByYear, queryDocumentsByDateRange, queryDocumentsAdvanced<br>
+            <strong>Purpose:</strong> Search user's uploaded documents and RAG knowledge base
+
+            <h4>NewsAgent</h4>
+            <strong>Tools:</strong> getMarketNews, getHeadlinesByCategory<br>
+            <strong>Purpose:</strong> Current events, breaking news, market headlines
+
+            <h4>WeatherAgent</h4>
+            <strong>Tools:</strong> getWeatherByLocation, getWeatherByZipCode<br>
+            <strong>Purpose:</strong> Weather data, forecasts, temperature
+        </div>
+
+        <div class="component-box">
+            <div class="component-header">3. AggregatorAgent - Result Synthesis</div>
+            <strong>Responsibility:</strong> Combines multiple agent results into a coherent, unified answer<br><br>
+
+            <strong>Features:</strong>
+            <ul>
+                <li>✅ LLM-based intelligent synthesis (not simple concatenation)</li>
+                <li>✅ Cites sources appropriately ("According to FinancialAgent...")</li>
+                <li>✅ Handles conflicting information from different agents</li>
+                <li>✅ Graceful failure handling with fallback to raw results</li>
+                <li>✅ Single agent optimization: returns directly without synthesis overhead</li>
+            </ul>
+        </div>
+
+        <h2 id="rag">📚 RAG Infrastructure</h2>
+
+        <div class="component-box">
+            <div class="component-header">Vector Store Pipeline</div>
+            <div class="flow-box" style="font-size: 0.9em;">
+                Document → Reader → TextSplitter → Embeddings (OpenAI) → PGVector
+            </div>
+            <div class="flow-arrow">▼</div>
+            <div class="flow-box" style="font-size: 0.9em;">
+                Retrieval: Vector Search (similarity) + BM25 (keyword)
+            </div>
+            <div class="flow-arrow">▼</div>
+            <div class="flow-box" style="font-size: 0.9em;">
+                Cross-Encoder Reranking (Top 20 → Top 5)
+            </div>
+
+            <br><br>
+            <table>
+                <tr>
+                    <th>Component</th>
+                    <th>Technology</th>
+                    <th>Configuration</th>
+                </tr>
+                <tr>
+                    <td>Vector Database</td>
+                    <td>PostgreSQL + PGVector</td>
+                    <td>Cosine similarity</td>
+                </tr>
+                <tr>
+                    <td>Embeddings</td>
+                    <td>OpenAI text-embedding-3-small</td>
+                    <td>1536 dimensions</td>
+                </tr>
+                <tr>
+                    <td>Hybrid Search</td>
+                    <td>Vector + BM25 + Cross-encoder</td>
+                    <td>candidateMultiplier: 4</td>
+                </tr>
+                <tr>
+                    <td>Similarity Threshold</td>
+                    <td>Configurable</td>
+                    <td>0.60 (high precision)</td>
+                </tr>
+                <tr>
+                    <td>Top-K Results</td>
+                    <td>Reranked documents</td>
+                    <td>5 documents</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="component-box">
+            <div class="component-header">Document Readers</div>
+            <ul>
+                <li><strong>PdfDocumentReader:</strong> Standard PDF parsing</li>
+                <li><strong>TikaPdfReader:</strong> OCR for scanned PDFs (Tesseract integration)</li>
+                <li><strong>WordDocumentReader:</strong> Microsoft Word (.docx) files</li>
+                <li><strong>ExcelDocumentReader:</strong> Microsoft Excel (.xlsx) files</li>
+            </ul>
+
+            <strong>File Watcher:</strong>
+            <ul>
+                <li>Monitors: <code>/tmp/ragdocs</code> directory</li>
+                <li>Poll interval: 5 seconds</li>
+                <li>Auto-ingestion: New files automatically processed</li>
+                <li>Persistent metadata: Prevents reprocessing</li>
+            </ul>
+        </div>
+
+        <div class="component-box">
+            <div class="component-header">Chat Memory (DynamoDB)</div>
+            <table>
+                <tr>
+                    <th>Feature</th>
+                    <th>Value</th>
+                </tr>
+                <tr>
+                    <td>Backend</td>
+                    <td>DynamoDB Local / AWS DynamoDB</td>
+                </tr>
+                <tr>
+                    <td>Conversation History</td>
+                    <td>20-message rolling window</td>
+                </tr>
+                <tr>
+                    <td>TTL (Time to Live)</td>
+                    <td>7 days (configurable)</td>
+                </tr>
+                <tr>
+                    <td>Session Management</td>
+                    <td>HTTP session-based conversationId</td>
+                </tr>
+                <tr>
+                    <td>Cross-Request Context</td>
+                    <td>✅ Enabled</td>
+                </tr>
+            </table>
+        </div>
+
+        <h2>🔁 ReACT Framework</h2>
+
+        <div class="component-box">
+            <div class="component-header">ReACT Loop Structure</div>
+            <div class="code-block">while (iterations < maxIterations && !answered):
+    1. THOUGHT:     "Iteration N: Analyzing question..."
+    2. ACTION:      LLM + tools → observation
+    3. OBSERVATION: Tool results
+    4. EVALUATE:    "Can I answer? YES/NO"
+       - YES → Extract answer, exit loop
+       - NO  → Continue to next iteration</div>
+
+            <br>
+            <strong>Guardrails:</strong>
+            <table>
+                <tr>
+                    <th>Guardrail</th>
+                    <th>Value</th>
+                    <th>Purpose</th>
+                </tr>
+                <tr>
+                    <td>Max Iterations</td>
+                    <td>2</td>
+                    <td>Prevent infinite loops</td>
+                </tr>
+                <tr>
+                    <td>Iteration Delay</td>
+                    <td>1000ms</td>
+                    <td>Rate limiting (avoid API throttling)</td>
+                </tr>
+                <tr>
+                    <td>Max Cost</td>
+                    <td>$0.50</td>
+                    <td>Budget protection</td>
+                </tr>
+                <tr>
+                    <td>Token Budget</td>
+                    <td>10,000</td>
+                    <td>Cost control</td>
+                </tr>
+            </table>
+        </div>
+
+        <h2 id="comparison">🚀 Comparison to Industry Standards</h2>
+
+        <table>
+            <tr>
+                <th>Feature</th>
+                <th>RAGService</th>
+                <th>Perplexity</th>
+                <th>Glean</th>
+                <th>Harvey</th>
+            </tr>
+            <tr>
+                <td>Multi-agent orchestration</td>
+                <td><span class="checkmark">✅</span></td>
+                <td><span class="checkmark">✅</span></td>
+                <td><span class="checkmark">✅</span></td>
+                <td><span class="checkmark">✅</span></td>
+            </tr>
+            <tr>
+                <td>LLM-based routing</td>
+                <td><span class="checkmark">✅</span></td>
+                <td><span class="checkmark">✅</span></td>
+                <td><span class="checkmark">✅</span></td>
+                <td><span class="checkmark">✅</span></td>
+            </tr>
+            <tr>
+                <td>Parallel agent execution</td>
+                <td><span class="checkmark">✅</span></td>
+                <td><span class="checkmark">✅</span></td>
+                <td><span class="checkmark">✅</span></td>
+                <td><span class="checkmark">✅</span></td>
+            </tr>
+            <tr>
+                <td>RAG with reranking</td>
+                <td><span class="checkmark">✅</span></td>
+                <td><span class="checkmark">✅</span></td>
+                <td><span class="checkmark">✅</span></td>
+                <td><span class="checkmark">✅</span></td>
+            </tr>
+            <tr>
+                <td>ReACT framework</td>
+                <td><span class="checkmark">✅</span></td>
+                <td><span class="checkmark">✅</span></td>
+                <td><span class="warning">⚠️</span></td>
+                <td><span class="checkmark">✅</span></td>
+            </tr>
+            <tr>
+                <td>Reflexion/self-improvement</td>
+                <td><span class="cross">❌</span></td>
+                <td><span class="checkmark">✅</span></td>
+                <td><span class="checkmark">✅</span></td>
+                <td><span class="checkmark">✅</span></td>
+            </tr>
+            <tr>
+                <td>Agentic handoff</td>
+                <td><span class="cross">❌</span></td>
+                <td><span class="warning">⚠️</span></td>
+                <td><span class="checkmark">✅</span></td>
+                <td><span class="checkmark">✅</span></td>
+            </tr>
+            <tr>
+                <td>Long-term memory</td>
+                <td><span class="cross">❌</span></td>
+                <td><span class="checkmark">✅</span></td>
+                <td><span class="checkmark">✅</span></td>
+                <td><span class="checkmark">✅</span></td>
+            </tr>
+            <tr style="background: #fff3cd; font-weight: bold;">
+                <td>Tier Classification</td>
+                <td>Tier 2</td>
+                <td>Tier 2.5</td>
+                <td>Tier 3</td>
+                <td>Tier 3</td>
+            </tr>
+        </table>
+
+        <div class="highlight-box">
+            <strong>Tier Definitions:</strong><br>
+            • <strong>Tier 1:</strong> Basic RAG + single agent<br>
+            • <strong>Tier 2:</strong> Multi-agent + routing + ReACT (RAGService is here)<br>
+            • <strong>Tier 3:</strong> Full agentic handoff + reflexion + long-term learning
+        </div>
+
+        <h2 id="metrics">📊 Performance Metrics</h2>
+
+        <div class="metric-grid">
+            <div class="metric-card">
+                <div class="metric-value">1-2s</div>
+                <div class="metric-label">Simple Query (1 agent)</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">2-4s</div>
+                <div class="metric-label">Complex Query (2-3 agents)</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">~500ms</div>
+                <div class="metric-label">Router Overhead</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">~800ms</div>
+                <div class="metric-label">Aggregation Overhead</div>
+            </div>
+        </div>
+
+        <h3>Token Usage (per query)</h3>
+        <table>
+            <tr>
+                <th>Component</th>
+                <th>Token Range</th>
+            </tr>
+            <tr>
+                <td>Routing</td>
+                <td>500-1,000 tokens</td>
+            </tr>
+            <tr>
+                <td>Agent Execution (per agent)</td>
+                <td>1,000-3,000 tokens</td>
+            </tr>
+            <tr>
+                <td>Aggregation</td>
+                <td>500-1,500 tokens</td>
+            </tr>
+            <tr style="background: #f0f9ff; font-weight: bold;">
+                <td>Total (typical)</td>
+                <td>2,000-8,000 tokens</td>
+            </tr>
+        </table>
+
+        <h3>Cost Estimate (GPT-4o)</h3>
+        <div class="component-box">
+            <strong>Pricing:</strong>
+            <ul>
+                <li>Input: $0.0025 per 1K tokens</li>
+                <li>Output: $0.01 per 1K tokens</li>
+            </ul>
+            <div class="success-box">
+                <strong>Average cost per query:</strong> $0.02 - $0.08
+            </div>
+        </div>
+
+        <h2>🎯 Architecture Patterns Used</h2>
+
+        <div class="agent-grid">
+            <div class="agent-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <h4>Router Pattern</h4>
+                <p>QueryRouterAgent for intent detection</p>
+            </div>
+            <div class="agent-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <h4>Strategy Pattern</h4>
+                <p>Specialized agents for domain expertise</p>
+            </div>
+            <div class="agent-card" style="background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);">
+                <h4>Aggregator Pattern</h4>
+                <p>Synthesizing multiple results</p>
+            </div>
+            <div class="agent-card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                <h4>Builder Pattern</h4>
+                <p>ChatClient configuration</p>
+            </div>
+            <div class="agent-card" style="background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);">
+                <h4>Observer Pattern</h4>
+                <p>SSE streaming for real-time updates</p>
+            </div>
+            <div class="agent-card" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);">
+                <h4>Retry Pattern</h4>
+                <p>Exponential backoff for rate limits</p>
+            </div>
+        </div>
+
+        <h2 id="pitch">🎓 Summary for Pitch</h2>
+
+        <div class="success-box">
+            <h3>Elevator Pitch</h3>
+            <p style="font-size: 1.1em; line-height: 1.8;">
+                "A production-grade RAG system with intelligent multi-agent orchestration. Uses LLM-based routing to distribute queries across specialized agents (Financial, Research, News, Weather), executes them in parallel, and synthesizes results into a unified answer. Features ReACT agent loops, hybrid vector search with cross-encoder reranking, and conversation memory persistence."
+            </p>
+        </div>
+
+        <h3>Key Differentiators</h3>
+        <div class="agent-grid">
+            <div class="agent-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <h4>✅ LLM-Based Routing</h4>
+                <p>No hardcoded if/else - intelligent intent detection</p>
+            </div>
+            <div class="agent-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <h4>✅ Parallel Execution</h4>
+                <p>CompletableFuture for optimal performance</p>
+            </div>
+            <div class="agent-card" style="background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);">
+                <h4>✅ Domain Specialists</h4>
+                <p>Isolated agents with targeted tools</p>
+            </div>
+            <div class="agent-card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                <h4>✅ Intelligent Aggregation</h4>
+                <p>LLM-based synthesis for coherent answers</p>
+            </div>
+            <div class="agent-card" style="background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);">
+                <h4>✅ ReACT Framework</h4>
+                <p>Transparent reasoning with self-evaluation</p>
+            </div>
+            <div class="agent-card" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);">
+                <h4>✅ Production Ready</h4>
+                <p>Rate limiting, retries, cost guardrails</p>
+            </div>
+        </div>
+
+        <h3>Next Evolution (Roadmap to Tier 3)</h3>
+        <div class="highlight-box">
+            <ul>
+                <li><strong>Reflexion:</strong> Self-critique and iterative improvement</li>
+                <li><strong>Agentic Handoff:</strong> Agent-to-agent dynamic delegation</li>
+                <li><strong>Long-Term Memory:</strong> User preference persistence across sessions</li>
+                <li><strong>Plan-and-Solve:</strong> Multi-step task decomposition</li>
+            </ul>
+        </div>
+
+        <h2>📞 Technical Contact</h2>
+        <div class="info-box">
+            For technical deep-dives, architecture discussions, or implementation details, please refer to the source code repository or contact the development team.
+        </div>
+
+        <hr style="margin: 40px 0; border: none; border-top: 2px solid #ecf0f1;">
+
+        <p style="text-align: center; color: #7f8c8d; font-size: 0.9em;">
+            <strong>RAG + Multi-Agent Agentic System</strong><br>
+            Spring Boot 3.2.6 • Spring AI 1.0.3 • OpenAI GPT-4o • PostgreSQL + PGVector<br>
+            Tier 2 Agentic RAG Architecture
+        </p>
+    </div>
+</body>
+</html>

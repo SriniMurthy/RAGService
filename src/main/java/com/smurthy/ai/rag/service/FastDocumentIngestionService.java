@@ -62,14 +62,14 @@ public class FastDocumentIngestionService {
         long embedStart = System.currentTimeMillis();
         embedChunksInParallel(documents);
         long embedTime = System.currentTimeMillis() - embedStart;
-        log.debug("✓ Embedding: " + embedTime + "ms");
+        log.debug("Embedding: " + embedTime + "ms");
 
         // Index in BM25 for hybrid retrieval
         long bm25Start = System.currentTimeMillis();
         try {
             bm25SearchService.indexDocuments(documents);
             long bm25Time = System.currentTimeMillis() - bm25Start;
-            log.debug("✓ BM25 Indexing: " + bm25Time + "ms");
+            log.debug("BM25 Indexing: " + bm25Time + "ms");
         } catch (Exception e) {
             log.warn("BM25 indexing failed (continuing anyway): " + e.getMessage());
         }
@@ -108,14 +108,14 @@ public class FastDocumentIngestionService {
 
                 Future<Boolean> future = executor.submit(() -> {
                     try {
-                        log.debug("  → Batch " + batchNum + "/" + batches.size() +
+                        log.debug("  Batch " + batchNum + "/" + batches.size() +
                                 " (" + batch.size() + " chunks) - Starting...");
 
                         // This calls OpenAI embedding API with retry logic
                         embedBatchWithRetry(batch);
 
                         int completed = completedBatches.incrementAndGet();
-                        log.debug(" -> Batch " + batchNum + "/" + batches.size() +
+                        log.debug(" Batch " + batchNum + "/" + batches.size() +
                                 " - Complete! (" + completed + " total)");
                         return true;
 
@@ -195,7 +195,7 @@ public class FastDocumentIngestionService {
                         try {
                             // Use retry-enabled method
                             embedBatchWithRetry(batch);
-                            log.debug("  ✓ Embedded batch of " + batch.size());
+                            log.debug("  Embedded batch of " + batch.size());
                         } catch (Exception e) {
                             System.err.println("  ✗ Batch failed after retries: " + e.getMessage());
                             throw new RuntimeException(e);

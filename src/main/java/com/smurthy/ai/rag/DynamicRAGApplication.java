@@ -6,7 +6,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.retry.annotation.EnableRetry;
 
-@SpringBootApplication
+@SpringBootApplication(exclude = {
+		org.springframework.ai.mcp.server.autoconfigure.McpServerAutoConfiguration.class,
+		org.springframework.ai.mcp.client.autoconfigure.McpClientAutoConfiguration.class
+})
 @EnableRetry
 @EnableConfigurationProperties(EmbeddingConfig.class)
 public class DynamicRAGApplication {

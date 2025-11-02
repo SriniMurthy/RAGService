@@ -181,7 +181,7 @@ public class RAGFunctionConfiguration {
                         request.question(),
                         0,
                         List.of(),
-                        "❌ Error querying documents: " + e.getMessage()
+                        "Error querying documents: " + e.getMessage()
                 );
             }
         };
@@ -228,7 +228,7 @@ public class RAGFunctionConfiguration {
                         request.question(),
                         0,
                         List.of(),
-                        "❌ Error: " + e.getMessage()
+                        "Error: " + e.getMessage()
                 );
             }
         };
@@ -267,7 +267,7 @@ public class RAGFunctionConfiguration {
                         request.question(),
                         0,
                         List.of(),
-                        "❌ Error querying year " + request.year() + ": " + e.getMessage()
+                        " Error querying year " + request.year() + ": " + e.getMessage()
                 );
             }
         };
@@ -303,7 +303,7 @@ public class RAGFunctionConfiguration {
                         request.question(),
                         0,
                         List.of(),
-                        "❌ Error with date '" + request.date() + "': " + e.getMessage()
+                        " Error with date '" + request.date() + "': " + e.getMessage()
                 );
             }
         };
@@ -344,7 +344,7 @@ public class RAGFunctionConfiguration {
                         request.question(),
                         0,
                         List.of(),
-                        "❌ Error with date range: " + e.getMessage()
+                        " Error with date range: " + e.getMessage()
                 );
             }
         };
@@ -363,7 +363,7 @@ public class RAGFunctionConfiguration {
                     question,
                     0,
                     List.of(),
-                    "ℹ️ No relevant documents found in the system for this query. " +
+                    "No relevant documents found in the system for this query. " +
                     "The document store may not contain information about this topic."
             );
         }
@@ -376,7 +376,7 @@ public class RAGFunctionConfiguration {
         // Build summary with statistics
         String summary = buildSummary(chunks);
 
-        log.info("✅ Found {} documents", documents.size());
+        log.info("Found {} documents", documents.size());
 
         return new DocumentQueryResponse(
                 question,
@@ -477,7 +477,7 @@ public class RAGFunctionConfiguration {
      */
     private String buildSummary(List<DocumentQueryResponse.DocumentChunk> chunks) {
         StringBuilder summary = new StringBuilder();
-        summary.append("✅ Found ").append(chunks.size()).append(" relevant document chunk(s).\n\n");
+        summary.append("Found ").append(chunks.size()).append(" relevant document chunk(s).\n\n");
 
         // Group by source file
         Map<String, Long> fileGroups = chunks.stream()

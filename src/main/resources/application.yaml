@@ -50,6 +50,7 @@ spring:
       chat:
         options:
           model: gpt-4o
+          retry-template: '#{retryTemplate}'
     anthropic:
       api-key: ${ANTHROPIC_API_KEY}
       chat:
@@ -131,6 +132,12 @@ logging:
   level:
     org.apache.pdfbox.pdmodel.font.FileSystemFontProvider: ERROR
 
+# ===== WEATHER SERVICE CONFIGURATION =====
+# External microservice for weather data (OpenWeatherMap)
+weather:
+  service:
+    url: ${WEATHER_SERVICE_URL:http://localhost:8081}
+
 # ===== RAFT DATASET GENERATION CONFIGURATION =====
 raft:
   # Maximum number of concurrent LLM API calls to prevent rate limiting
@@ -138,6 +145,50 @@ raft:
   # Adjust based on your OpenAI tier and token usage per request
   # Recommended: 5-10 for Tier 1, 2-3 for free tier
   max-concurrent-llm-calls: 10
+
+# ===== REACT AGENT GUARDRAILS =====
+# Prevent runaway costs and infinite loops in ReACT agent
+react:
+  # Maximum iterations the agent can perform (HARD LIMIT - not overridable by request)
+  # REDUCED to 2 for better performance - most queries need only 1 iteration
+  max-iterations: 2
+
+  # Maximum tokens allowed per query (estimated)
+  # GPT-4o: ~$0.0025/1K input tokens, ~$0.01/1K output tokens
+  # 10K tokens ≈ $0.10 max cost per query
+  max-tokens-per-query: 10000
+
+  # Stuck detection: If same tool called N times in a row, stop
+  max-repeated-tool-calls: 2
+
+  # Maximum cost per query in USD (safety net)
+  max-cost-per-query: 0.50
+
+  # Enable cost tracking and logging
+  enable-cost-tracking: true
+
+  # Delay between iterations in milliseconds (rate limiting)
+  # Helps avoid hitting OpenAI's TPM (tokens per minute) limits
+  # Default: 1000ms (1 second)
+  iteration-delay-ms: 1000
+
+# ===== MCP (MODEL CONTEXT PROTOCOL) CONFIGURATION =====
+# External knowledge sources and tools via MCP servers
+# DISABLED: Awaiting stable SDK API compatibility with Spring AI 1.0.3
+
+#  ai:
+#    mcp:
+#      client:
+#        tool-callbacks-enabled: true
+#        clients:
+#          wikipedia:
+#            type: stdio
+#            transport:
+#              stdio:
+#                command: npx
+#                args:
+#                  - "-y"
+#                  - "@modelcontextprotocol/server-wikipedia"
 
 # ===== DYNAMODB CHAT MEMORY CONFIGURATION =====
 # Persistent chat history using DynamoDB Local (or AWS DynamoDB)

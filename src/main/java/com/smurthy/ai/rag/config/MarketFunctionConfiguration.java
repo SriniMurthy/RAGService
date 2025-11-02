@@ -6,7 +6,7 @@ import com.smurthy.ai.rag.advisor.ToolInvocationTracker;
 import com.smurthy.ai.rag.service.MarketDataService;
 import com.smurthy.ai.rag.service.NewsService;
 import com.smurthy.ai.rag.service.YahooFinanceService;
-import com.smurthy.ai.rag.service.WeatherService;
+import com.smurthy.ai.rag.service.WeatherClient;
 import com.smurthy.ai.rag.service.provider.CompositeStockQuoteProvider;
 import com.smurthy.ai.rag.service.provider.StockQuoteProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -26,7 +26,7 @@ import java.util.function.Function;
  * •Tool Definitions: Each @Bean in the class is a tool. For example, getYahooQuote, 
  *  getMarketNews, and getHistoricalPrices are all distinct tools the AI can use.
  * •Service Integration: These tools are not just dummy functions; they are wired into backend services
- *  like YahooFinanceService, NewsService, and WeatherService to fetch real, live data
+ *  like YahooFinanceService, NewsService, and WeatherClient (microservice) to fetch real, live data
  *  
  *  LIMITATIONS: For some reason, Yahoo Finance errors out in fetching historical data, and it
  *  has for sure disabled the free tier fetching of stock data. Will need to cough up subscription 
@@ -38,7 +38,7 @@ public class MarketFunctionConfiguration {
     private final MarketDataService marketDataService;
     private final NewsService newsService;
     private final YahooFinanceService yahooFinanceService;
-    private final WeatherService weatherService;
+    private final WeatherClient weatherClient;
     private final CompositeStockQuoteProvider compositeStockQuoteProvider;
 
     private static final Logger log = LoggerFactory.getLogger(MarketFunctionConfiguration.class);
@@ -47,12 +47,12 @@ public class MarketFunctionConfiguration {
             MarketDataService marketDataService,
             NewsService newsService,
             YahooFinanceService yahooFinanceService,
-            WeatherService weatherService,
+            WeatherClient weatherClient,
             CompositeStockQuoteProvider compositeStockQuoteProvider) {
         this.marketDataService = marketDataService;
         this.newsService = newsService;
         this.yahooFinanceService = yahooFinanceService;
-        this.weatherService = weatherService;
+        this.weatherClient = weatherClient;
         this.compositeStockQuoteProvider = compositeStockQuoteProvider;
     }
 
@@ -391,13 +391,13 @@ public class MarketFunctionConfiguration {
     // Weather Service Tools (FREE, UNLIMITED!)
 
     @Bean("getWeatherByLocation")
-    @Description("Get current weather for any location by name (e.g. 'Santa Clara, California', 'New York', 'London, UK'). FREE, no API key needed!")
+    @Description("Get current weather for any location by name (e.g. 'Santa Clara, California', 'New York', 'London, UK'). Uses OpenWeatherMap for accurate data!")
     public Function<WeatherByLocationRequest, WeatherResponse> getWeatherByLocation() {
         return request -> {
             ToolInvocationTracker.recordToolCall("getWeatherByLocation");
-            log.debug("TOOL CALLED: getWeatherByLocation(" + request.location() + ") - FREE!");
+            log.debug("TOOL CALLED: getWeatherByLocation(" + request.location() + ") - via weather microservice");
 
-            WeatherService.WeatherData weather = weatherService.getWeatherByLocation(request.location());
+            WeatherClient.WeatherData weather = weatherClient.getWeatherByLocation(request.location());
 
             return new WeatherResponse(
                     weather.location(),
@@ -413,13 +413,13 @@ public class MarketFunctionConfiguration {
     }
 
     @Bean("getWeatherByZipCode")
-    @Description("Get current weather by US ZIP code (e.g. '95129', '10001'). FREE, no API key needed!")
+    @Description("Get current weather by US ZIP code (e.g. '95129', '10001'). Uses OpenWeatherMap for accurate data!")
     public Function<WeatherByZipRequest, WeatherResponse> getWeatherByZipCode() {
         return request -> {
             ToolInvocationTracker.recordToolCall("getWeatherByZipCode");
-            log.debug("TOOL CALLED: getWeatherByZipCode(" + request.zipCode() + ") - FREE!");
+            log.debug("TOOL CALLED: getWeatherByZipCode(" + request.zipCode() + ") - via weather microservice");
 
-            WeatherService.WeatherData weather = weatherService.getWeatherByZipCode(request.zipCode());
+            WeatherClient.WeatherData weather = weatherClient.getWeatherByZipCode(request.zipCode());
 
             return new WeatherResponse(
                     weather.location(),

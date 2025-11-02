@@ -5,12 +5,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.tool.ToolCallback;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -40,6 +42,7 @@ public class UnifiedAgenticController {
 
     private static final Logger log = LoggerFactory.getLogger(UnifiedAgenticController.class);
     private final ChatClient.Builder toolsOnlyBuilder;
+    private final List<ToolCallback> mcpTools;
 
     // FIX: This set is now the single source of truth and contains all 17 tools the test expects.
     private static final Set<String> ALL_TOOLS = Set.of(
@@ -75,12 +78,21 @@ public class UnifiedAgenticController {
 
     public UnifiedAgenticController(
             ChatClient.Builder builder,
-            ChatMemory chatMemory) {
+            ChatMemory chatMemory,
+            List<ToolCallback> mcpTools) {
+
+        this.mcpTools = mcpTools;
+
+        log.info("UnifiedAgenticController initialized with {} MCP tools", mcpTools.size());
+        mcpTools.forEach(tool -> log.info("  - {}: {}",
+                tool.getToolDefinition().name(),
+                tool.getToolDefinition().description()));
 
         this.toolsOnlyBuilder = builder
                 .defaultAdvisors(
                         MessageChatMemoryAdvisor.builder(chatMemory)
-                                .build());
+                                .build())
+                .defaultToolCallbacks(mcpTools.toArray(new ToolCallback[0]));
     }
 
     @GetMapping("/ask")
@@ -97,7 +109,8 @@ public class UnifiedAgenticController {
         log.info("║         UNIFIED AGENTIC QUERY                      ║");
         log.info("╚════════════════════════════════════════════════════╝");
         log.info(" Question: {}", question);
-        log.info(" Available tools: {} total", ALL_TOOLS.size());
+        log.info(" Available tools: {} bean tools + {} MCP tools = {} total",
+                ALL_TOOLS.size(), mcpTools.size(), ALL_TOOLS.size() + mcpTools.size());
 
         long startTime = System.currentTimeMillis();
 
@@ -130,12 +143,18 @@ public class UnifiedAgenticController {
             **DOCUMENT STORE TOOLS:**
             -   `queryDocuments`, `queryDocumentsByYear`: USE FIRST for any biographical, resume, or historical project questions.
 
+            **WIKIPEDIA TOOLS:**
+            -   `wikipedia_search`: Search Wikipedia for general knowledge, facts, historical information, biographies of public figures.
+            -   USE FOR: Questions about general knowledge, history, science, public figures, or concepts not in your local documents.
+
             **OTHER TOOLS:**
             -   `getWeatherByLocation`: For weather-related questions.
             -   `getMarketNews`: For general news on any topic.
 
             IMPORTANT RULES:
             -   FIRST check conversation history for context before using tools.
+            -   For general knowledge questions, prefer Wikipedia tools over documents.
+            -   For user-specific questions (resume, personal docs), prefer document tools.
             -   Choose the single best tool for the job based on the hierarchy above.
             -   Maintain conversation context across multiple turns.
             """;

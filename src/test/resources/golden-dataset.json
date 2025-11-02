@@ -1,0 +1,109 @@
+{
+  "questions" : [ {
+    "question" : "What is the professional background of the person writing the letter?",
+    "relevantChunkIds" : [ "4e080628-048d-4cd7-bf69-2f248197b605" ],
+    "type" : "factual",
+    "sourceFile" : "CoverLetter.pdf"
+  }, {
+    "question" : "How did the writer achieve significant architectural improvements in their previous roles?",
+    "relevantChunkIds" : [ "4e080628-048d-4cd7-bf69-2f248197b605" ],
+    "type" : "conceptual",
+    "sourceFile" : "CoverLetter.pdf"
+  }, {
+    "question" : "What percentage performance improvement did the writer achieve in their past projects?",
+    "relevantChunkIds" : [ "4e080628-048d-4cd7-bf69-2f248197b605" ],
+    "type" : "detail",
+    "sourceFile" : "CoverLetter.pdf"
+  }, {
+    "question" : "What associations is the entity mentioned in the document a member of?",
+    "relevantChunkIds" : [ "a7dfedaf-0747-461f-9658-5842a9d7f1eb" ],
+    "type" : "factual",
+    "sourceFile" : "FinancialBeats.pdf"
+  }, {
+    "question" : "Why is it important for financial entities to be members of associations like the Japan Securities Dealers Association?",
+    "relevantChunkIds" : [ "a7dfedaf-0747-461f-9658-5842a9d7f1eb" ],
+    "type" : "conceptual",
+    "sourceFile" : "FinancialBeats.pdf"
+  }, {
+    "question" : "What is the expiration date associated with RO 3891689 mentioned in the document?",
+    "relevantChunkIds" : [ "a7dfedaf-0747-461f-9658-5842a9d7f1eb" ],
+    "type" : "detail",
+    "sourceFile" : "FinancialBeats.pdf"
+  }, {
+    "question" : "Who is the Co-Head of the Mortgage and Securitized team?",
+    "relevantChunkIds" : [ "77b10031-e817-49e2-99fa-813489d816db" ],
+    "type" : "factual",
+    "sourceFile" : "FinancialBeats.pdf"
+  }, {
+    "question" : "How do the roles of Co-Head of the Mortgage and Securitized team and Head of Fixed Income Product Strategy differ in terms of responsibilities?",
+    "relevantChunkIds" : [ "77b10031-e817-49e2-99fa-813489d816db" ],
+    "type" : "conceptual",
+    "sourceFile" : "FinancialBeats.pdf"
+  }, {
+    "question" : "What is the position held by Katie Herr within the organization?",
+    "relevantChunkIds" : [ "77b10031-e817-49e2-99fa-813489d816db" ],
+    "type" : "detail",
+    "sourceFile" : "FinancialBeats.pdf"
+  }, {
+    "question" : "What is the current outlook for interest rate cuts by G3 central banks over the next two years?",
+    "relevantChunkIds" : [ "f7cfac18-0b62-4211-ab92-3b1791a25a06" ],
+    "type" : "factual",
+    "sourceFile" : "FinancialBeats.pdf"
+  }, {
+    "question" : "Why might the market be at risk of a hawkish surprise from central banks?",
+    "relevantChunkIds" : [ "f7cfac18-0b62-4211-ab92-3b1791a25a06" ],
+    "type" : "conceptual",
+    "sourceFile" : "FinancialBeats.pdf"
+  }, {
+    "question" : "As of September 23, 2024, how many basis points of cuts are expected from the ECB and BoE according to the market?",
+    "relevantChunkIds" : [ "f7cfac18-0b62-4211-ab92-3b1791a25a06" ],
+    "type" : "detail",
+    "sourceFile" : "FinancialBeats.pdf"
+  }, {
+    "question" : "What is the purpose of the Finance Commission as mentioned in the document?",
+    "relevantChunkIds" : [ "9468e343-a2d6-415c-bb89-5eb6cbeab4d0" ],
+    "type" : "factual",
+    "sourceFile" : "IndianFinancialSystem.pdf"
+  }, {
+    "question" : "Why do some economists advocate for gross-tuning in addressing large and persistent GDP gaps?",
+    "relevantChunkIds" : [ "9468e343-a2d6-415c-bb89-5eb6cbeab4d0" ],
+    "type" : "conceptual",
+    "sourceFile" : "IndianFinancialSystem.pdf"
+  }, {
+    "question" : "Under which Article of the Constitution is the Finance Commission appointed?",
+    "relevantChunkIds" : [ "9468e343-a2d6-415c-bb89-5eb6cbeab4d0" ],
+    "type" : "detail",
+    "sourceFile" : "IndianFinancialSystem.pdf"
+  }, {
+    "question" : "What is the maximum stake that NRIs/OCBs can acquire in a company without requiring a general body resolution according to the recommendations?",
+    "relevantChunkIds" : [ "c398bdb9-2a9f-4d28-b399-967b632d231f" ],
+    "type" : "factual",
+    "sourceFile" : "IndianFinancialSystem.pdf"
+  }, {
+    "question" : "Why did the Group recommend fiscal parity between NRIs/OCBs and FIIs concerning capital gains tax?",
+    "relevantChunkIds" : [ "c398bdb9-2a9f-4d28-b399-967b632d231f" ],
+    "type" : "conceptual",
+    "sourceFile" : "IndianFinancialSystem.pdf"
+  }, {
+    "question" : "What is the increased individual ceiling percentage recommended for NRI/OCB portfolio investment?",
+    "relevantChunkIds" : [ "c398bdb9-2a9f-4d28-b399-967b632d231f" ],
+    "type" : "detail",
+    "sourceFile" : "IndianFinancialSystem.pdf"
+  }, {
+    "question" : "What are the types of institutions included under development banks?",
+    "relevantChunkIds" : [ "ade6f1d0-b59f-4ff3-866b-1f7875e826bb" ],
+    "type" : "factual",
+    "sourceFile" : "IndianFinancialSystem.pdf"
+  }, {
+    "question" : "How did the financial sector reforms initiated in 1992-93 aim to improve the financial markets in India?",
+    "relevantChunkIds" : [ "ade6f1d0-b59f-4ff3-866b-1f7875e826bb" ],
+    "type" : "conceptual",
+    "sourceFile" : "IndianFinancialSystem.pdf"
+  } ],
+  "generatedAt" : "Fri Oct 24 19:48:30 PDT 2025",
+  "metadata" : {
+    "question_types" : 3,
+    "unique_files" : 3,
+    "total_questions" : 20
+  }
+}
