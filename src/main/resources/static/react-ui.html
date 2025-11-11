@@ -335,6 +335,7 @@
             const encodedQuestion = encodeURIComponent(question);
             eventSource = new EventSource(`/RAG/askStream?q=${encodedQuestion}`);
 
+
             eventSource.onmessage = function(event) {
                 const data = JSON.parse(event.data);
 

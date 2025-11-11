@@ -260,45 +260,28 @@ public class YahooFinanceService {
     /**
      * Get market movers (top gainers and losers)
      * NOTE: Yahoo Finance removed free API access to screener data.
-     * This returns realistic mock data. For production, use a paid API or web scraping.
+     * This function is currently disabled to prevent returning misleading mock data.
+     * For production, implement web scraping or use Finnhub/Polygon.io/Alpha Vantage API.
      */
     public MarketMovers getMarketMovers(String market, int limit) {
-        log.info("Fetching market movers for {} (returning mock data - Yahoo screener requires subscription)", market);
+        log.warn("getMarketMovers called but returning ERROR - Yahoo screener requires paid subscription");
 
-        // Mock data representing typical market movers
-        // In production, scrape Yahoo Finance screener or use Finnhub/Polygon.io API
-        List<Mover> topGainers = List.of(
-                new Mover("NVDA", "NVIDIA Corporation", 450.25, 8.5, 125_000_000L),
-                new Mover("TSLA", "Tesla Inc", 245.80, 6.2, 98_000_000L),
-                new Mover("AMD", "Advanced Micro Devices", 165.30, 5.1, 75_000_000L),
-                new Mover("MRNA", "Moderna Inc", 88.40, 4.8, 42_000_000L),
-                new Mover("PLTR", "Palantir Technologies", 22.15, 4.2, 55_000_000L)
-        ).stream().limit(limit).toList();
-
-        List<Mover> topLosers = List.of(
-                new Mover("META", "Meta Platforms Inc", 312.50, -4.8, 45_000_000L),
-                new Mover("AAPL", "Apple Inc", 178.20, -3.2, 60_000_000L),
-                new Mover("MSFT", "Microsoft Corporation", 405.10, -2.5, 35_000_000L),
-                new Mover("GOOGL", "Alphabet Inc", 142.30, -2.1, 28_000_000L),
-                new Mover("AMZN", "Amazon.com Inc", 155.60, -1.8, 38_000_000L)
-        ).stream().limit(limit).toList();
-
-        String summary = String.format(
-                "%s Market Movers: Top %d gainers showing +%.1f%% to +%.1f%%. Top %d losers down %.1f%% to %.1f%%. " +
-                "Note: This is sample data. For real-time movers, use getMarketNews with '%s movers' or integrate paid API.",
-                market,
-                topGainers.size(),
-                topGainers.isEmpty() ? 0.0 : topGainers.get(topGainers.size() - 1).changePercent(),
-                topGainers.isEmpty() ? 0.0 : topGainers.get(0).changePercent(),
-                topLosers.size(),
-                topLosers.isEmpty() ? 0.0 : topLosers.get(0).changePercent(),
-                topLosers.isEmpty() ? 0.0 : topLosers.get(topLosers.size() - 1).changePercent(),
+        String errorMessage = String.format(
+                "ERROR: Market movers data is not available. Yahoo Finance discontinued free screener API access. " +
+                "To get market movers, either:\n" +
+                "1. Use getMarketNews tool with query '%s top gainers and losers today'\n" +
+                "2. Implement paid API (Finnhub, Polygon.io, Alpha Vantage)\n" +
+                "3. Implement web scraping solution\n" +
+                "DO NOT make up or guess market movement data.",
                 market
         );
 
-        log.info("  Returning {} gainers and {} losers (mock data)", topGainers.size(), topLosers.size());
-
-        return new MarketMovers(market, topGainers, topLosers, summary);
+        return new MarketMovers(
+                market,
+                List.of(), // Empty gainers list
+                List.of(), // Empty losers list
+                errorMessage
+        );
     }
 
     public record MarketMovers(

@@ -1,109 +1,109 @@
 {
   "questions" : [ {
-    "question" : "What is the professional background of the person writing the letter?",
+    "question" : "Who expressed interest in the Principal Software Engineer position at Airbnb?",
+    "relevantChunkIds" : [ "aa172796-4a6c-4a96-8fc1-385734e31e1f" ],
+    "type" : "factual",
+    "sourceFile" : "Cover Letter.pdf"
+  }, {
+    "question" : "How did Yangbo Zhu demonstrate expertise in system architecture and cloud technologies throughout their career?",
+    "relevantChunkIds" : [ "aa172796-4a6c-4a96-8fc1-385734e31e1f" ],
+    "type" : "conceptual",
+    "sourceFile" : "Cover Letter.pdf"
+  }, {
+    "question" : "What search engines does Yangbo Zhu have experience with?",
+    "relevantChunkIds" : [ "aa172796-4a6c-4a96-8fc1-385734e31e1f" ],
+    "type" : "detail",
+    "sourceFile" : "Cover Letter.pdf"
+  }, {
+    "question" : "What role is the author interested in pursuing according to the cover letter?",
     "relevantChunkIds" : [ "4e080628-048d-4cd7-bf69-2f248197b605" ],
     "type" : "factual",
     "sourceFile" : "CoverLetter.pdf"
   }, {
-    "question" : "How did the writer achieve significant architectural improvements in their previous roles?",
+    "question" : "How did the author achieve significant architectural improvements in their career?",
     "relevantChunkIds" : [ "4e080628-048d-4cd7-bf69-2f248197b605" ],
     "type" : "conceptual",
     "sourceFile" : "CoverLetter.pdf"
   }, {
-    "question" : "What percentage performance improvement did the writer achieve in their past projects?",
+    "question" : "What performance gain percentage did the author achieve in their professional achievements?",
     "relevantChunkIds" : [ "4e080628-048d-4cd7-bf69-2f248197b605" ],
     "type" : "detail",
     "sourceFile" : "CoverLetter.pdf"
   }, {
-    "question" : "What associations is the entity mentioned in the document a member of?",
-    "relevantChunkIds" : [ "a7dfedaf-0747-461f-9658-5842a9d7f1eb" ],
+    "question" : "What does the MSCI EAFE Index represent?",
+    "relevantChunkIds" : [ "83d5417e-a9d8-456e-bb0d-97b2e5cfafb6" ],
     "type" : "factual",
     "sourceFile" : "FinancialBeats.pdf"
   }, {
-    "question" : "Why is it important for financial entities to be members of associations like the Japan Securities Dealers Association?",
-    "relevantChunkIds" : [ "a7dfedaf-0747-461f-9658-5842a9d7f1eb" ],
+    "question" : "How is the yield to worst on a bond calculated?",
+    "relevantChunkIds" : [ "83d5417e-a9d8-456e-bb0d-97b2e5cfafb6" ],
     "type" : "conceptual",
     "sourceFile" : "FinancialBeats.pdf"
   }, {
-    "question" : "What is the expiration date associated with RO 3891689 mentioned in the document?",
-    "relevantChunkIds" : [ "a7dfedaf-0747-461f-9658-5842a9d7f1eb" ],
+    "question" : "How many constituents are included in the MSCI USA Index?",
+    "relevantChunkIds" : [ "83d5417e-a9d8-456e-bb0d-97b2e5cfafb6" ],
     "type" : "detail",
     "sourceFile" : "FinancialBeats.pdf"
   }, {
-    "question" : "Who is the Co-Head of the Mortgage and Securitized team?",
-    "relevantChunkIds" : [ "77b10031-e817-49e2-99fa-813489d816db" ],
+    "question" : "What is the current view on U.S. Treasuries in the fixed income market according to the chunk?",
+    "relevantChunkIds" : [ "9182261b-c5d0-434f-8c20-9236ae0732d1" ],
     "type" : "factual",
     "sourceFile" : "FinancialBeats.pdf"
   }, {
-    "question" : "How do the roles of Co-Head of the Mortgage and Securitized team and Head of Fixed Income Product Strategy differ in terms of responsibilities?",
-    "relevantChunkIds" : [ "77b10031-e817-49e2-99fa-813489d816db" ],
+    "question" : "Why might inflation linked bonds (TIPS) be considered valuable relative to nominal treasuries over the medium term?",
+    "relevantChunkIds" : [ "9182261b-c5d0-434f-8c20-9236ae0732d1" ],
     "type" : "conceptual",
     "sourceFile" : "FinancialBeats.pdf"
   }, {
-    "question" : "What is the position held by Katie Herr within the organization?",
-    "relevantChunkIds" : [ "77b10031-e817-49e2-99fa-813489d816db" ],
+    "question" : "What are the consensus growth forecasts for the eurozone for 2025 and 2026 in relation to long-run potential GDP growth?",
+    "relevantChunkIds" : [ "9182261b-c5d0-434f-8c20-9236ae0732d1" ],
     "type" : "detail",
     "sourceFile" : "FinancialBeats.pdf"
   }, {
-    "question" : "What is the current outlook for interest rate cuts by G3 central banks over the next two years?",
-    "relevantChunkIds" : [ "f7cfac18-0b62-4211-ab92-3b1791a25a06" ],
+    "question" : "What is the current view on U.S. equities according to the Portfolio Solutions Group's representative positioning?",
+    "relevantChunkIds" : [ "de6419d6-fe94-4c1a-a763-55ab1363f63c" ],
     "type" : "factual",
     "sourceFile" : "FinancialBeats.pdf"
   }, {
-    "question" : "Why might the market be at risk of a hawkish surprise from central banks?",
-    "relevantChunkIds" : [ "f7cfac18-0b62-4211-ab92-3b1791a25a06" ],
+    "question" : "Why is the strengthening of the yen considered a risk for Japanese equities?",
+    "relevantChunkIds" : [ "de6419d6-fe94-4c1a-a763-55ab1363f63c" ],
     "type" : "conceptual",
     "sourceFile" : "FinancialBeats.pdf"
   }, {
-    "question" : "As of September 23, 2024, how many basis points of cuts are expected from the ECB and BoE according to the market?",
-    "relevantChunkIds" : [ "f7cfac18-0b62-4211-ab92-3b1791a25a06" ],
+    "question" : "What is the valuation of U.S. equities in terms of 2025 consensus earnings?",
+    "relevantChunkIds" : [ "de6419d6-fe94-4c1a-a763-55ab1363f63c" ],
     "type" : "detail",
     "sourceFile" : "FinancialBeats.pdf"
   }, {
-    "question" : "What is the purpose of the Finance Commission as mentioned in the document?",
-    "relevantChunkIds" : [ "9468e343-a2d6-415c-bb89-5eb6cbeab4d0" ],
+    "question" : "What position is the applicant interested in at HubSpot?",
+    "relevantChunkIds" : [ "20a20f83-b517-4940-bce3-90a18134416e" ],
     "type" : "factual",
-    "sourceFile" : "IndianFinancialSystem.pdf"
+    "sourceFile" : "Hubspot_CoverLetter.pdf"
   }, {
-    "question" : "Why do some economists advocate for gross-tuning in addressing large and persistent GDP gaps?",
-    "relevantChunkIds" : [ "9468e343-a2d6-415c-bb89-5eb6cbeab4d0" ],
+    "question" : "How did the applicant's experience at Zscaler contribute to performance optimization?",
+    "relevantChunkIds" : [ "20a20f83-b517-4940-bce3-90a18134416e" ],
     "type" : "conceptual",
-    "sourceFile" : "IndianFinancialSystem.pdf"
+    "sourceFile" : "Hubspot_CoverLetter.pdf"
   }, {
-    "question" : "Under which Article of the Constitution is the Finance Commission appointed?",
-    "relevantChunkIds" : [ "9468e343-a2d6-415c-bb89-5eb6cbeab4d0" ],
+    "question" : "What technologies has the applicant used for large-scale, real-time data processing?",
+    "relevantChunkIds" : [ "20a20f83-b517-4940-bce3-90a18134416e" ],
     "type" : "detail",
-    "sourceFile" : "IndianFinancialSystem.pdf"
+    "sourceFile" : "Hubspot_CoverLetter.pdf"
   }, {
-    "question" : "What is the maximum stake that NRIs/OCBs can acquire in a company without requiring a general body resolution according to the recommendations?",
-    "relevantChunkIds" : [ "c398bdb9-2a9f-4d28-b399-967b632d231f" ],
+    "question" : "What happens on the final pay-in-day in the clearing house process?",
+    "relevantChunkIds" : [ "533e589b-2b27-4310-b05f-cfebaa293e79" ],
     "type" : "factual",
     "sourceFile" : "IndianFinancialSystem.pdf"
   }, {
-    "question" : "Why did the Group recommend fiscal parity between NRIs/OCBs and FIIs concerning capital gains tax?",
-    "relevantChunkIds" : [ "c398bdb9-2a9f-4d28-b399-967b632d231f" ],
-    "type" : "conceptual",
-    "sourceFile" : "IndianFinancialSystem.pdf"
-  }, {
-    "question" : "What is the increased individual ceiling percentage recommended for NRI/OCB portfolio investment?",
-    "relevantChunkIds" : [ "c398bdb9-2a9f-4d28-b399-967b632d231f" ],
-    "type" : "detail",
-    "sourceFile" : "IndianFinancialSystem.pdf"
-  }, {
-    "question" : "What are the types of institutions included under development banks?",
-    "relevantChunkIds" : [ "ade6f1d0-b59f-4ff3-866b-1f7875e826bb" ],
-    "type" : "factual",
-    "sourceFile" : "IndianFinancialSystem.pdf"
-  }, {
-    "question" : "How did the financial sector reforms initiated in 1992-93 aim to improve the financial markets in India?",
-    "relevantChunkIds" : [ "ade6f1d0-b59f-4ff3-866b-1f7875e826bb" ],
+    "question" : "How does the auction system work for scrips that could not be delivered on the final day?",
+    "relevantChunkIds" : [ "533e589b-2b27-4310-b05f-cfebaa293e79" ],
     "type" : "conceptual",
     "sourceFile" : "IndianFinancialSystem.pdf"
   } ],
-  "generatedAt" : "Fri Oct 24 19:48:30 PDT 2025",
+  "generatedAt" : "Thu Nov 06 12:53:45 PST 2025",
   "metadata" : {
-    "question_types" : 3,
-    "unique_files" : 3,
-    "total_questions" : 20
+    "total_questions" : 20,
+    "mode" : "EVALUATION",
+    "unique_files" : 5
   }
 }

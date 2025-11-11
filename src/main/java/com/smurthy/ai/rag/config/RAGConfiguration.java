@@ -21,7 +21,7 @@ public class RAGConfiguration {
     @Bean
     public ChatMemory chatMemory() {
         return MessageWindowChatMemory.builder()
-                .maxMessages(20)
+                .maxMessages(8)  // Reduced from 20 to 8 to stay under 30K token limit
                 .build();
     }
 }

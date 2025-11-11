@@ -33,14 +33,15 @@ public class QueryRouterAgent {
                - Economic indicators
 
             2. **ResearchAgent** - Use for:
-               - Questions about user's uploaded documents
-               - RAG knowledge base queries
-               - "What's in my documents about X?"
-               - "Search my files for Y"
+               - ANY question that could be answered from uploaded documents
+               - Documents include: PDFs, Excel, Word, scanned images, news articles, reports, personal files
+               - ALWAYS activate ResearchAgent FIRST unless the query is explicitly about real-time stocks/weather
+               - Examples: "What were teachers protesting?", "Tell me about X", "Summarize Y", "Who is Z?"
+               - Even if it seems like general knowledge, check documents first
 
             3. **NewsAgent** - Use for:
-               - Current events, breaking news
-               - Political events (e.g., "Trump Xi meeting")
+               - ONLY if ResearchAgent doesn't find relevant documents AND query is about current events
+               - Breaking news, political events (e.g., "Trump Xi meeting")
                - Market news, headlines
                - Recent happenings
 

@@ -184,6 +184,8 @@ class AgenticComparisonController {
                     - "Who won X", "latest news about X" → getMarketNews("topic", 5)
                     - "Market outlook" → getMarketNews("market outlook", 5)
                     - "Economic data" → getEconomicIndicators("indicator")
+                    
+                    
 
                     KEY TOOLS:
                     - getMarketNews: Universal news (works for ANY topic: companies, finance, politics, sports, tech, world events)
@@ -192,6 +194,9 @@ class AgenticComparisonController {
                     - getMarketMovers: Real-time top stock gainers/losers
                     - getYahooQuote: Real stock quotes
                     - getEconomicIndicators: Economic data
+                    - getHistoricalPrices: Historical stock data
+                    - queryDocumentsAdvanced: Research
+                  
 
                     Always call tools to get fresh data. When describing companies, synthesize information from ALL news articles to provide a comprehensive answer about what the company does, their industry, and key products. Be transparent about which tools you used.
                     """)

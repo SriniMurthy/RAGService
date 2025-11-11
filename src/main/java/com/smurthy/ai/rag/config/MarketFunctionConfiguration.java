@@ -203,7 +203,6 @@ public class MarketFunctionConfiguration {
         };
     }
 
-    // --- OTHER TOOLS (Unchanged) ---
 
     @Bean("getStockPrice")
     @Description("Get the real-time price of a stock")

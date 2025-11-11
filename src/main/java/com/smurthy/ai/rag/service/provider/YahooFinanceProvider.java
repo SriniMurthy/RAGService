@@ -21,10 +21,10 @@ public class YahooFinanceProvider implements StockQuoteProvider {
 
     private static final Logger log = LoggerFactory.getLogger(YahooFinanceProvider.class);
 
-    @Value("${finance.api.priority:50}")
+    @Value("${finance.yahoo.priority:100}")
     private  int priority; // Lower priority due to reliability issues
 
-    @Value("${finance.api.enabled:false}")
+    @Value("${finance.yahoo.enabled:true}")
     private boolean enabled;
 
     @Override

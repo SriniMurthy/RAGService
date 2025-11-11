@@ -129,7 +129,7 @@ public class BM25SearchService {
 
             List<BM25Result> results = new ArrayList<>();
             for (ScoreDoc scoreDoc : topDocs.scoreDocs) {
-                Document doc = indexSearcher.doc(scoreDoc.doc);
+                Document doc = indexSearcher.storedFields().document(scoreDoc.doc);
                 String docId = doc.get("id");
                 float score = scoreDoc.score;
 

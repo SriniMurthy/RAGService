@@ -9,9 +9,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
-public class CrossEncoderRerankingService implements RerankingService {
+public class WeightedRerankingService implements RerankingService {
 
-    private static final Logger log = LoggerFactory.getLogger(CrossEncoderRerankingService.class);
+    private static final Logger log = LoggerFactory.getLogger(WeightedRerankingService.class);
 
     // Re-balanced weights to give more importance to phrase matching
     private static final double VECTOR_SCORE_WEIGHT = 0.5;

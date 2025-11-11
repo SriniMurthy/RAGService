@@ -44,7 +44,7 @@ public class UnifiedAgenticController {
     private final ChatClient.Builder toolsOnlyBuilder;
     private final List<ToolCallback> mcpTools;
 
-    // FIX: This set is now the single source of truth and contains all 17 tools the test expects.
+    // This set is now the single source of truth and contains all 17 tools the test expects.
     private static final Set<String> ALL_TOOLS = Set.of(
             // RAG & Document Tools (4)
             "queryDocuments",

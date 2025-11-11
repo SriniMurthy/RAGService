@@ -1,6 +1,6 @@
 package com.smurthy.ai.rag;
 
-import com.smurthy.ai.rag.service.CrossEncoderRerankingService;
+import com.smurthy.ai.rag.service.WeightedRerankingService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.document.Document;
@@ -31,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class RerankingImpactTest extends BaseIntegrationTest {
 
     @Autowired
-    private CrossEncoderRerankingService rerankingService;
+    private WeightedRerankingService rerankingService;
 
     private List<Document> mockVectorSearchResults;
     private String testQuery;

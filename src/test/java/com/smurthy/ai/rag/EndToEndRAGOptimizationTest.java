@@ -222,7 +222,7 @@ public class EndToEndRAGOptimizationTest extends BaseIntegrationTest {
         System.out.println("│   Restart application                                                       │");
         System.out.println("│                                                                             │");
         System.out.println("│ Option C - Manual API:                                                      │");
-        System.out.println("│   POST /RAGJava/documents/ingest                                            │");
+        System.out.println("│   POST /RAG/documents/ingest                                            │");
         System.out.println("│                                                                             │");
         System.out.println("└─────────────────────────────────────────────────────────────────────────────┘");
         System.out.println();

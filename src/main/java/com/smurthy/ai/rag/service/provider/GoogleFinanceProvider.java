@@ -31,7 +31,7 @@ public class GoogleFinanceProvider implements StockQuoteProvider {
         this.objectMapper = new ObjectMapper();
     }
 
-    @Value("${finnhub.api.enabled:false}")
+    @Value("${finance.google.enabled:true}")
     private boolean enabled;
 
 

@@ -84,6 +84,16 @@ pdf:
     enable-ocr: true         # Enable Tika/Tesseract fallback
     min-chars-per-page: 50   # Threshold to detect scanned PDFs
 
+# ===== LANGCHAIN4J AGENT CONFIGURATION =====
+langchain4j:
+  chat-model:
+    provider: open-ai
+  open-ai:
+    chat-model:
+      api-key: ${OPENAI_API_KEY}
+      model-name: gpt-4o
+      max-tokens: 500
+      temperature: 0.3
 
 app:
   ingestion:
@@ -91,9 +101,9 @@ app:
     parallel-embeddings: 5
   retrieval:
     # Hybrid retrieval configuration
-    topK: 5                          # Final number of documents to return after reranking
+    topK: 3                          # Reduced from 5 to 3 to stay under 30K token limit
     similarityThreshold: 0.60        # Raised from 0.30 - better precision with hybrid retrieval
-    candidateMultiplier: 4           # Retrieve topK * 4 candidates for reranking (e.g., 5 * 4 = 20)
+    candidateMultiplier: 3           # Reduced from 4 to 3 (retrieves 3 * 3 = 9 candidates)
 
 # ===== REAL-TIME FINANCE APIs =====
 finance:
