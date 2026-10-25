@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -58,28 +59,93 @@ public class DocumentIngestionService {
 
     private void cleanAndEmbedDocument(Resource resource, DocumentReader reader, TextSplitter textSplitter, String category) {
         List<Document> documents = reader.read(resource);
-        List<Document> allChunks = new ArrayList<>();
+        List<Document> allChunks = new CopyOnWriteArrayList<>();
+
+        String fileName = resource.getFilename();
+        String personName = fileName != null ? extractPersonName(fileName) : null;
 
         documents.parallelStream().forEach(doc -> {
             var cleanedDocument = this.cleanDocument(doc);
             List<Document> chunks = textSplitter.apply(List.of(cleanedDocument));
 
-            // Attempt to extract date information from the document content
             Map<String, String> dateInfo = extractDatesFromDocument(doc.getText());
+            String header = buildChunkHeader(fileName, personName, category);
 
-            chunks.forEach(chunk -> {
+            List<Document> stampedChunks = chunks.stream().map(chunk -> {
                 chunk.getMetadata().put("category", category);
-                if (resource.getFilename() != null) {
-                    chunk.getMetadata().put("file_name", resource.getFilename());
+                if (fileName != null) {
+                    chunk.getMetadata().put("file_name", fileName);
+                    chunk.getMetadata().put("source", fileName);
                 }
-                // Add the extracted date info to each chunk
+                if (personName != null) {
+                    chunk.getMetadata().put("person_name", personName);
+                }
                 chunk.getMetadata().putAll(dateInfo);
-            });
+                return new Document(header + chunk.getText(), chunk.getMetadata());
+            }).toList();
 
-            allChunks.addAll(chunks);
+            allChunks.addAll(stampedChunks);
         });
 
-        embeddingService.ingestFast(allChunks);
+        embeddingService.ingestFast(new ArrayList<>(allChunks));
+    }
+
+    /**
+     * Fix 2: Build a short identity header that is prepended to every chunk's text before
+     * embedding. The header survives retrieval and tells the LLM exactly which document
+     * each piece of content belongs to — critical when multiple people's resumes are in
+     * the store and share companies, dates, or skills.
+     */
+    private String buildChunkHeader(String fileName, String personName, String category) {
+        StringBuilder header = new StringBuilder("[DOCUMENT: ");
+        header.append(fileName != null ? fileName : "unknown");
+        if (personName != null) {
+            header.append(" | PERSON: ").append(personName);
+        }
+        header.append(" | CATEGORY: ").append(category);
+        header.append("]\n\n");
+        return header.toString();
+    }
+
+    /**
+     * Fix 3: Derive a human-readable person name from a resume filename.
+     * Handles common conventions:
+     *   alice_smith_resume.pdf   → "Alice Smith"
+     *   bob-jones-cv.pdf         → "Bob Jones"
+     *   JohnDoe.pdf              → "John Doe"  (CamelCase split)
+     * Returns null if the name cannot be extracted (non-resume docs pass through cleanly).
+     */
+    static String extractPersonName(String fileName) {
+        if (fileName == null) return null;
+
+        // Strip extension
+        String base = fileName.replaceAll("\\.[^.]+$", "");
+
+        // Remove common resume suffixes
+        base = base.replaceAll("(?i)[_\\-\\s]*(resume|cv|curriculum.vitae|profile).*$", "");
+
+        // Replace separators with spaces
+        base = base.replace('_', ' ').replace('-', ' ');
+
+        // Split CamelCase: "JohnDoe" → "John Doe"
+        base = base.replaceAll("([a-z])([A-Z])", "$1 $2");
+
+        // Collapse whitespace and trim
+        base = base.replaceAll("\\s+", " ").trim();
+
+        if (base.isEmpty()) return null;
+
+        // Title-case each word
+        String[] words = base.split(" ");
+        StringBuilder name = new StringBuilder();
+        for (String word : words) {
+            if (!word.isEmpty()) {
+                if (!name.isEmpty()) name.append(" ");
+                name.append(Character.toUpperCase(word.charAt(0)));
+                if (word.length() > 1) name.append(word.substring(1).toLowerCase());
+            }
+        }
+        return name.isEmpty() ? null : name.toString();
     }
 
     /**

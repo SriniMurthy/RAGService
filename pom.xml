@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.2.6</version>
+        <version>3.5.16</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.smurthy.ai.rag</groupId>
@@ -28,7 +28,7 @@
     </scm>
     <properties>
         <java.version>21</java.version>
-        <spring-ai.version>1.0.3</spring-ai.version>
+        <spring-ai.version>1.1.8</spring-ai.version>
         <lombok.version>1.18.34</lombok.version>
     </properties>
 
@@ -129,11 +129,6 @@
             <version>9.9.2</version>
         </dependency>
 
-        <dependency>
-            <groupId>io.modelcontextprotocol.sdk</groupId>
-            <artifactId>mcp-core</artifactId>
-            <version>0.15.0</version>
-        </dependency>
 
         <dependency>
             <groupId>org.springframework.ai</groupId>
@@ -150,19 +145,18 @@
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-mcp</artifactId>
-            <version>1.1.0-M1</version>
         </dependency>
 
         <!-- LangChain4j Dependencies -->
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-spring-boot-starter</artifactId>
-            <version>0.33.0</version>
+            <version>1.22.0-beta32</version>
         </dependency>
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-open-ai</artifactId>
-            <version>0.33.0</version>
+            <version>1.22.0</version>
         </dependency>
 
         <dependency>
@@ -172,22 +166,17 @@
         </dependency>
 
 
-        <dependency>
-            <groupId>io.modelcontextprotocol.sdk</groupId>
-            <artifactId>mcp</artifactId>
-            <version>0.14.0</version>
-        </dependency>
 
         <!-- AWS DynamoDB SDK v2 for chat history persistence -->
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>dynamodb</artifactId>
-            <version>2.20.26</version>
+            <version>2.56.0</version>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>dynamodb-enhanced</artifactId>
-            <version>2.20.26</version>
+            <version>2.56.0</version>
         </dependency>
 
         <dependency>
@@ -281,19 +270,4 @@
             </plugin>
         </plugins>
     </build>
-    <repositories>
-        <repository>
-            <id>spring-milestones</id>
-            <name>Spring Milestones</name>
-            <url>https://repo.spring.io/milestone</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-        <repository>
-            <id>spring-releases</id>
-            <name>Spring Releases</name>
-            <url>https://repo.spring.io/release</url>
-        </repository>
-    </repositories>
 </project>

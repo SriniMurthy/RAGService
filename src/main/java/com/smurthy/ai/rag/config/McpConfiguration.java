@@ -1,6 +1,6 @@
 package com.smurthy.ai.rag.config;
 
-import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +36,7 @@ public class McpConfiguration {
      * @return A configured instance of OpenAiChatModel.
      */
     @Bean
-    public ChatLanguageModel chatLanguageModel(
+    public ChatModel chatLanguageModel(
             @Value("${langchain4j.open-ai.chat-model.api-key}") String apiKey,
             @Value("${langchain4j.open-ai.chat-model.model-name}") String modelName,
             @Value("${langchain4j.open-ai.chat-model.temperature}") Double temperature) {

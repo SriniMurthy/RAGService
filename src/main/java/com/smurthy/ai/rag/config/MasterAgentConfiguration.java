@@ -25,10 +25,10 @@ public class MasterAgentConfiguration {
      */
     @Bean
     public MasterAgent masterAgent(
-            dev.langchain4j.model.chat.ChatLanguageModel chatModel,
+            dev.langchain4j.model.chat.ChatModel chatModel,
             AgentTools agentTools) {
         return dev.langchain4j.service.AiServices.builder(MasterAgent.class)
-                .chatLanguageModel(chatModel)
+                .chatModel(chatModel)
                 .tools(agentTools)
                 .build();
     }

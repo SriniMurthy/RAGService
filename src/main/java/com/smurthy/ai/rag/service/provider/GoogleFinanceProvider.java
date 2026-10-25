@@ -275,6 +275,11 @@ public class GoogleFinanceProvider implements StockQuoteProvider {
     }
 
     @Override
+    public boolean isEnabled() {
+        return true;
+    }
+
+    @Override
     public int getPriority() {
         return PRIORITY;
     }

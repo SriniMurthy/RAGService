@@ -1,74 +1,71 @@
 package com.smurthy.ai.rag.agents;
 
+import com.smurthy.ai.rag.config.RAGFunctionConfiguration;
+import dev.langchain4j.data.message.SystemMessage;
+import dev.langchain4j.data.message.UserMessage;
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.response.ChatResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
-import java.util.Set;
+import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Specialized Agent for Research/Document Queries
  *
- * Handles queries about user's uploaded documents and RAG knowledge base.
- * Has access ONLY to document/RAG tools.
+ * Retrieves documents via queryDocuments function bean directly (bypasses Spring AI tool-calling),
+ * then synthesizes an answer using LangChain4j's ChatModel (bypasses Spring AI RestClient bug).
  */
 @Component
 public class ResearchAgent {
 
     private static final Logger log = LoggerFactory.getLogger(ResearchAgent.class);
-    private final ChatClient researchChatClient;
-
-    // Only RAG/document tools
-    private static final Set<String> RESEARCH_TOOLS = Set.of(
-            "queryDocuments",
-            "queryDocumentsByYear",
-            "queryDocumentsByDateRange",
-            "queryDocumentsAdvanced"
-    );
+    private final ChatModel chatModel;
+    private final Function<RAGFunctionConfiguration.DocumentQueryRequest,
+                           RAGFunctionConfiguration.DocumentQueryResponse> queryDocumentsFn;
 
     private static final String SYSTEM_PROMPT = """
             You are a specialized Research AI agent with expertise in analyzing documents and knowledge bases.
 
             YOUR CAPABILITIES:
-            - Search and analyze user's uploaded documents (PDFs, Excel, Word, scanned images, etc.)
+            - Search and analyze user's uploaded documents (PDFs, Excel, Word, scanned images, resumes, reports, etc.)
             - Retrieve information from the RAG knowledge base
-            - Synthesize information across multiple document chunks
-            - Time-based document queries (by year, date range)
 
             CRITICAL RULES - MUST FOLLOW:
-            1. ALWAYS call `queryDocuments` tool for EVERY question you receive
-            2. The document store contains: resumes, PDFs, scanned images, news articles, reports, Excel files, Word docs
-            3. Only provide information found in the documents
-            4. If `queryDocuments` returns "No relevant documents found", then state: "I don't have information about this in the available documents."
-            5. Cite document sources when possible (file names, dates)
-            6. Be thorough but concise
-            7. If asked about real-time data (stocks, weather), politely decline and suggest using appropriate tools
+            1. Answer ONLY from the DOCUMENTS section provided.
+            2. Each retrieved chunk begins with a header like === DOCUMENT CHUNK ===, Source: filename.
+               Read this header carefully — it tells you exactly which document the chunk belongs to.
+            3. NEVER merge information from different source documents into a single answer about one person.
+               If two chunks come from different files, they describe DIFFERENT people or documents.
+            4. For EVERY fact you state, you MUST attribute it: "According to [filename]: ..."
+            5. If asked about a specific person, only use chunks from that person's file.
+            6. If the DOCUMENTS section says "No relevant documents found", state exactly:
+               "I don't have information about this in the available documents."
+            7. If asked about real-time data (stocks, weather), decline and suggest appropriate tools.
 
-            WORKFLOW:
-            Step 1: Call `queryDocuments` with the user's question
-            Step 2: Analyze the retrieved documents
-            Step 3: Synthesize and answer based on document content
-            Step 4: If no documents found, inform the user
-
-            Remember: ALWAYS search documents first - they may contain news articles, reports, or information you wouldn't expect!
+            ANTI-HALLUCINATION RULES:
+            - Only state facts that appear in the retrieved chunks.
+            - Do not infer, assume, or fill gaps between chunks from different source files.
             """;
 
-    public ResearchAgent(ChatClient.Builder chatClientBuilder, ChatMemory chatMemory) {
-        this.researchChatClient = chatClientBuilder
-                .defaultSystem(SYSTEM_PROMPT)
-                .defaultToolNames(RESEARCH_TOOLS.toArray(new String[0]))
-                .build();
-
-        log.info("ResearchAgent initialized with {} tools", RESEARCH_TOOLS.size());
+    public ResearchAgent(
+            ChatModel chatModel,
+            @Qualifier("queryDocuments") Function<RAGFunctionConfiguration.DocumentQueryRequest,
+                                                  RAGFunctionConfiguration.DocumentQueryResponse> queryDocumentsFn) {
+        this.chatModel = chatModel;
+        this.queryDocumentsFn = queryDocumentsFn;
+        log.info("ResearchAgent initialized (LangChain4j + direct retrieval)");
     }
 
     /**
      * Execute a research/document query
      *
      * @param question The user's question
-     * @param conversationId Conversation ID for memory
+     * @param conversationId Conversation ID for memory (unused here — stateless synthesis)
      * @return AgentResult with document findings
      */
     public AgentResult execute(String question, String conversationId) {
@@ -76,11 +73,38 @@ public class ResearchAgent {
         long startTime = System.currentTimeMillis();
 
         try {
-            String result = researchChatClient.prompt()
-                    .user(question)
-                    .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId))
-                    .call()
-                    .content();
+            // Step 1: Retrieve documents directly — no LLM tool-routing round-trip
+            RAGFunctionConfiguration.DocumentQueryResponse retrieved =
+                    queryDocumentsFn.apply(new RAGFunctionConfiguration.DocumentQueryRequest(question));
+
+            log.info("[ResearchAgent] Retrieved {} documents for query", retrieved.documentsFound());
+
+            // Step 2: Format chunks into a synthesis prompt
+            String chunksText;
+            if (retrieved.documentsFound() == 0 || retrieved.documents().isEmpty()) {
+                chunksText = "No relevant documents found.";
+            } else {
+                chunksText = retrieved.documents().stream()
+                        .map(RAGFunctionConfiguration.DocumentQueryResponse.DocumentChunk::toFormattedString)
+                        .collect(Collectors.joining("\n"));
+            }
+
+            String userPrompt = """
+                    QUESTION: %s
+
+                    DOCUMENTS:
+                    %s
+
+                    Answer the question above using ONLY the documents provided.
+                    Attribute every fact to its source file.
+                    """.formatted(question, chunksText);
+
+            // Step 3: Synthesize using LangChain4j ChatModel directly
+            ChatResponse response = chatModel.chat(List.of(
+                    SystemMessage.from(SYSTEM_PROMPT),
+                    UserMessage.from(userPrompt)
+            ));
+            String result = response.aiMessage().text();
 
             long elapsed = System.currentTimeMillis() - startTime;
             log.info("[ResearchAgent] Completed in {}ms", elapsed);

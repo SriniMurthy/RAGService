@@ -82,6 +82,16 @@ public class YahooFinanceProvider implements StockQuoteProvider {
         return "Yahoo Finance";
     }
 
+    @Override
+    public boolean isEnabled() {
+        return true;
+    }
+
+    @Override
+    public int getPriority() {
+        return 1;
+    }
+
     private double safeDecimal(BigDecimal value) {
         return value != null ? value.doubleValue() : 0.0;
     }

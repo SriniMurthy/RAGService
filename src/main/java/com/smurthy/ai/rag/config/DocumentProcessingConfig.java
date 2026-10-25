@@ -1,5 +1,6 @@
 package com.smurthy.ai.rag.config;
 
+import java.util.List;
 import org.springframework.ai.transformer.splitter.TextSplitter;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.context.annotation.Bean;
@@ -31,6 +32,6 @@ public class DocumentProcessingConfig {
      */
     @Bean
     public TextSplitter tokenTextSplitter() {
-        return  new TokenTextSplitter(512, 100, 128, 800, true);
+        return new TokenTextSplitter(512, 100, 128, 800, true, List.of('.', '?', '!', '\n'));
     }
 }

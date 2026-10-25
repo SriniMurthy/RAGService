@@ -28,14 +28,14 @@ public class Langchain4jAgentConfiguration {
      */
     @Bean
     public MCPFinanceAgent mcpFinanceAgent(
-            dev.langchain4j.model.chat.ChatLanguageModel chatModel,
+            dev.langchain4j.model.chat.ChatModel chatModel,
             ApplicationContext context) {
 
         // Get all Spring AI function beans
         FinancialTools tools = new FinancialTools(context);
 
         return dev.langchain4j.service.AiServices.builder(MCPFinanceAgent.class)
-                .chatLanguageModel(chatModel)
+                .chatModel(chatModel)
                 .tools(tools)
                 .build();
     }
@@ -45,13 +45,13 @@ public class Langchain4jAgentConfiguration {
      */
     @Bean
     public MCPWeatherAgent mcpWeatherAgent(
-            dev.langchain4j.model.chat.ChatLanguageModel chatModel,
+            dev.langchain4j.model.chat.ChatModel chatModel,
             ApplicationContext context) {
 
         WeatherTools tools = new WeatherTools(context);
 
         return dev.langchain4j.service.AiServices.builder(MCPWeatherAgent.class)
-                .chatLanguageModel(chatModel)
+                .chatModel(chatModel)
                 .tools(tools)
                 .build();
     }

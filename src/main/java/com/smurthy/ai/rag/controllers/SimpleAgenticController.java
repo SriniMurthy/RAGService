@@ -17,6 +17,7 @@ import reactor.core.publisher.Flux;
 
 import jakarta.servlet.http.HttpSession;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
@@ -89,7 +90,6 @@ public class SimpleAgenticController {
         this.chatClientBuilder = builder
                 .defaultAdvisors(
                         MessageChatMemoryAdvisor.builder(chatMemory)
-                                .conversationId("default")
                                 .build())
                 .defaultToolCallbacks(mcpTools.toArray(new ToolCallback[0]));
     }
@@ -139,7 +139,7 @@ public class SimpleAgenticController {
 
         // MASTER AGENT - Truly agentic routing via function calling (no if/else)
         log.info("Delegating to MasterAgent for agentic routing...");
-        String answer = masterAgent.orchestrate(q);
+        String answer = masterAgent.orchestrate(LocalDate.now().toString(), q);
 
         long elapsedMs = System.currentTimeMillis() - startTime;
 
@@ -184,7 +184,7 @@ public class SimpleAgenticController {
                         .build());
 
                 // Call MasterAgent (truly agentic - no if/else)
-                String answer = masterAgent.orchestrate(q);
+                String answer = masterAgent.orchestrate(LocalDate.now().toString(), q);
 
                 sink.next(ServerSentEvent.<ReActEvent>builder()
                         .data(new ReActEvent("ANSWER", answer))

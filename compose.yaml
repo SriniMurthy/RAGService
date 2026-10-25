@@ -3,8 +3,8 @@ services:
     image: 'pgvector/pgvector:pg16'
     environment:
       - 'POSTGRES_DB=RAGJava'
-      - 'POSTGRES_PASSWORD=${SM_PASSWORD}'
-      - 'POSTGRES_USER=${SM_USERNAME}'
+      - 'POSTGRES_PASSWORD=${SM_PASSWORD:-ragpassword}'
+      - 'POSTGRES_USER=${SM_USER_NAME:-raguser}'
     labels:
       - "org.springframework.boot.service-connection=postgres"
     ports:

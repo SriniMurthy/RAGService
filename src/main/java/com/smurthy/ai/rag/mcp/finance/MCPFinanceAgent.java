@@ -1,9 +1,7 @@
 package com.smurthy.ai.rag.mcp.finance;
 
 import dev.langchain4j.service.SystemMessage;
-import dev.langchain4j.service.spring.AiService;
 
-@AiService
 public interface MCPFinanceAgent {
 
     @SystemMessage("""

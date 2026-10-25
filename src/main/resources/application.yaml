@@ -38,19 +38,17 @@ spring:
     active: data-ingestion
   datasource:
     url: jdbc:postgresql://localhost:5432/RAGJava
-    username: ${SM_USER_NAME}
-    password: ${SM_PASSWORD}
+    username: ${SM_USER_NAME:raguser}
+    password: ${SM_PASSWORD:ragpassword}
     driver-class-name: org.postgresql.Driver
   ai:
     openai:
       api-key: ${OPENAI_API_KEY}
       embedding:
-        options:
-          retry-template: '#{retryTemplate}'
+        options: {}
       chat:
         options:
           model: gpt-4o
-          retry-template: '#{retryTemplate}'
     anthropic:
       api-key: ${ANTHROPIC_API_KEY}
       chat:
@@ -92,7 +90,7 @@ langchain4j:
     chat-model:
       api-key: ${OPENAI_API_KEY}
       model-name: gpt-4o
-      max-tokens: 500
+      max-tokens: 4096
       temperature: 0.3
 
 app:

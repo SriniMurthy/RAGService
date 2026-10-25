@@ -392,7 +392,7 @@ public class RAGFunctionConfiguration {
     private DocumentQueryResponse.DocumentChunk convertToDocumentChunk(Document doc) {
         Map<String, Object> metadata = doc.getMetadata();
 
-        String sourceFile = extractMetadata(metadata, "source", "filename", "file");
+        String sourceFile = extractMetadata(metadata, "file_name", "source", "filename", "file");
         String sheetName = extractMetadata(metadata, "sheet_name", "sheet", "tab");
         Integer sheetIndex = extractIntMetadata(metadata, "sheet_index", "sheet_number");
         String startDate = extractMetadata(metadata, "start_date", "date_from", "from_date");

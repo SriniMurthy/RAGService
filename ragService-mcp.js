@@ -45,7 +45,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 });
 
 // Handle tool execution
-server.setRequestHandler(CallToolRequestSchema, async (request) => {
+````.setRequestHandler(CallToolRequestSchema, async (request) => {
   console.error(`[MCP] Tool called: ${request.params.name}`);
   console.error(`[MCP] Arguments:`, JSON.stringify(request.params.arguments));
 
